@@ -1,0 +1,468 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Modern Color Palette 2025 */
+  --primary-color: #6366f1;
+  --primary-light: #818cf8;
+  --primary-dark: #4f46e5;
+  --surface-color: #ffffff;
+  --background-color: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --border-color: #e2e8f0;
+
+  /* Modern Layout */
+  --border-radius-sm: 0.375rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 1rem;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  
+  /* Typography */
+  font-family: 'Inter var', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Animations */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --blur-effect: blur(10px);
+  --gradient-bg: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+}
+
+/* Modern Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-attachment: fixed;
+  background: var(--gradient-bg);
+  min-height: 100vh;
+  background-color: var(--background-color);
+  color: var(--text-primary);
+}
+
+/* Modern Link Styles */
+a {
+  font-weight: 500;
+  color: var(--primary-color);
+  text-decoration: inherit;
+  transition: var(--transition-fast);
+}
+a:hover {
+  color: var(--primary-light);
+}
+
+button {
+  border-radius: var(--border-radius-md);
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+button:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+/* Modern Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  transition: all 0.3s var(--transition-ease);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Smooth Animations */
+.fade-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s var(--transition-ease);
+}
+
+.fade-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s var(--transition-ease);
+}
+
+/* Loading Skeleton Animation */
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, 
+    rgba(0, 0, 0, 0.06) 25%, 
+    rgba(0, 0, 0, 0.04) 37%, 
+    rgba(0, 0, 0, 0.06) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+}
+
+/* Glass Effect */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: var(--blur-effect);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Hover Card Effect */
+.hover-card {
+  transition: all 0.3s ease-in-out !important;
+}
+
+.hover-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Form Elements */
+input, select, textarea {
+  font-family: inherit;
+  transition: all 0.2s var(--transition-ease);
+}
+
+/* Button Animations */
+.button-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-hover::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: translateX(-100%);
+}
+
+.button-hover:hover::after {
+  transform: translateX(100%);
+  transition: transform 0.6s var(--transition-ease);
+}
+
+/* Toast Notifications */
+.Toastify__toast {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+  backdrop-filter: blur(10px) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.Toastify__toast-body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.875rem;
+}
+
+/* Page Transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Table styles */
+.MuiTableContainer-root {
+  margin-top: 1rem;
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.MuiTableRow-root {
+  transition: background-color 0.2s ease;
+}
+
+.MuiTableRow-root:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Loading skeleton pulse animation */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.6; }
+}
+
+.MuiSkeleton-root {
+  animation: pulse 1.5s ease-in-out infinite !important;
+}
+
+/* Form elements */
+.MuiOutlinedInput-root {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.MuiOutlinedInput-root:hover {
+  transform: translateY(-1px);
+}
+
+.MuiOutlinedInput-root.Mui-focused {
+  transform: translateY(-2px);
+}
+
+/* Button animations */
+.MuiButton-root {
+  position: relative;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.MuiButton-root::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.3) 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 1s;
+}
+
+.MuiButton-root:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
+}
+
+/* Chip animations */
+.MuiChip-root {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.MuiChip-root:hover {
+  transform: scale(1.05);
+}
+
+/* Dialog animations */
+.MuiDialog-root .MuiDialog-paper {
+  transition: all 0.3s ease-in-out !important;
+}
+
+.MuiDialog-root.MuiDialog-hidden .MuiDialog-paper {
+  transform: scale(0.9) !important;
+  opacity: 0 !important;
+}
+
+/* Icon button hover effects */
+.MuiIconButton-root {
+  transition: transform 0.2s ease-in-out !important;
+}
+
+.MuiIconButton-root:hover {
+  transform: scale(1.1);
+}
+
+/* Modern Card Styles */
+.modern-card {
+  background: var(--surface-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition: var(--transition-normal);
+}
+
+.modern-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Modern Loading Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg, 
+    var(--border-color) 25%, 
+    var(--background-color) 50%, 
+    var(--border-color) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Page Transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+.page-exit {
+  opacity: 1;
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+/* Modern Form Styles */
+.modern-input {
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  transition: var(--transition-fast);
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Responsive Grid Layout */
+.responsive-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Modern Table Styles */
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.modern-table th,
+.modern-table td {
+  padding: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modern-table tr:hover {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-badge.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+}
+
+.status-badge.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--warning-color);
+}
+
+.status-badge.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error-color);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}

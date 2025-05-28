@@ -1,0 +1,126 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
+
+export default function Messages({ grievanceId, studentId }) {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  // Create authorization header
+  const config = {
+    headers: {
+      'Authorization': `Bearer ${btoa(JSON.stringify(user))}`
+    }
+  };
+  useEffect(() => {
+    if (grievanceId) {
+      fetchMessages();
+    }
+  }, [grievanceId]);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/messages/${grievanceId}`,
+        config
+      );
+      setMessages(Array.isArray(response.data) ? response.data : []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      toast.error('Failed to load messages');
+      setMessages([]);
+      setLoading(false);
+    }
+  };
+
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    try {
+      await axios.post(
+        'http://localhost:5000/api/messages',
+        {
+          grievanceId,
+          receiverId: studentId,
+          content: newMessage.trim()
+        },
+        config
+      );
+      
+      setNewMessage('');
+      fetchMessages();
+      toast.success('Message sent successfully');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
+    }
+  };
+
+  if (loading) {
+    return <div>Loading messages...</div>;
+  }
+
+  return (
+    <div className="messages-container">
+      <h3>Messages</h3>
+      <div className="messages-list" style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px' }}>
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`message ${message.sender_id === user.id ? 'sent' : 'received'}`}
+            style={{
+              margin: '10px',
+              padding: '10px',
+              borderRadius: '8px',
+              backgroundColor: message.sender_id === user.id ? '#e3f2fd' : '#f5f5f5',
+              alignSelf: message.sender_id === user.id ? 'flex-end' : 'flex-start',
+            }}
+          >
+            <div className="message-sender" style={{ fontSize: '0.8em', marginBottom: '5px' }}>
+              {message.sender_name}
+            </div>
+            <div className="message-content">{message.content}</div>
+            <div className="message-time" style={{ fontSize: '0.7em', textAlign: 'right' }}>
+              {new Date(message.created_at).toLocaleString()}
+            </div>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={sendMessage} className="message-form">
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          className="message-input"
+          style={{
+            width: '100%',
+            padding: '10px',
+            marginRight: '10px',
+            borderRadius: '4px',
+            border: '1px solid #ddd'
+          }}
+        />
+        <button
+          type="submit"
+          className="send-button"
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#1976d2',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Send
+        </button>
+      </form>
+    </div>
+  );
+}

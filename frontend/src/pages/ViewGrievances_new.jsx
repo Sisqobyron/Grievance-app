@@ -377,12 +377,13 @@ export default function ViewGrievances() {
                   </Grid>
                 </>
               )}
-                <Grid item xs={6}>
+              
+              <Grid item xs={6}>
                 <Typography variant="subtitle2" color="textSecondary">
                   Category
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                  {selectedGrievance.type}
+                  {selectedGrievance.category}
                 </Typography>
               </Grid>
               
@@ -453,8 +454,9 @@ export default function ViewGrievances() {
                   </Typography>
                 </Grid>
               )}
-                {/* Attachments */}
-              {selectedGrievance.file_path && (
+              
+              {/* Attachments */}
+              {selectedGrievance.attachment_path && (
                 <Grid item xs={12}>
                   <Typography variant="h6" gutterBottom>
                     Attachments
@@ -462,7 +464,7 @@ export default function ViewGrievances() {
                   <Divider sx={{ mb: 2 }} />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     {(() => {
-                      const filename = selectedGrievance.file_path.split(/[\\/]/).pop()
+                      const filename = selectedGrievance.attachment_path.split('/').pop()
                       const fileType = getFileType(filename)
                       
                       return (
@@ -534,8 +536,9 @@ export default function ViewGrievances() {
         PaperProps={{
           sx: { height: '90vh' }
         }}
-      >        <DialogTitle>
-          Attachment Viewer - {selectedGrievance?.file_path?.split(/[\\/]/).pop()}
+      >
+        <DialogTitle>
+          Attachment Viewer - {selectedGrievance?.attachment_path?.split('/').pop()}
           <IconButton
             sx={{ position: 'absolute', right: 8, top: 8 }}
             onClick={() => setAttachmentViewerOpen(false)}
@@ -544,8 +547,8 @@ export default function ViewGrievances() {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 0, height: '100%' }}>
-          {selectedGrievance?.file_path && (() => {
-            const filename = selectedGrievance.file_path.split(/[\\/]/).pop()
+          {selectedGrievance?.attachment_path && (() => {
+            const filename = selectedGrievance.attachment_path.split('/').pop()
             const fileType = getFileType(filename)
             const fileUrl = `http://localhost:5000/uploads/${filename}`
             

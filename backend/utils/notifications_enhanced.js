@@ -13,7 +13,7 @@ const {
 } = require('./emailTemplates');
 
 // Enhanced transporter setup with better configuration
-const transporter = nodemailer.createTransport({
+const transporter = nodemailer.createTransporter({
   service: 'gmail',
   auth: {
     user: 'byronbright2k21@gmail.com',

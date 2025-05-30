@@ -27,17 +27,18 @@ db.serialize(() => {
     department TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
-
   // Grievances table
   db.run(`CREATE TABLE IF NOT EXISTS grievances (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
     type TEXT NOT NULL,
+    subcategory TEXT,
     description TEXT NOT NULL,
     status TEXT DEFAULT 'Submitted',
     file_path TEXT,
     submission_date TEXT,
     priority_level TEXT,
+    additional_data TEXT,
     FOREIGN KEY(student_id) REFERENCES students(user_id)
   )`);
 

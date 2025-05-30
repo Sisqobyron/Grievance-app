@@ -1,20 +1,58 @@
 const Message = require('../models/messageModel');
-const { sendNotification } = require('../utils/notifications');
+const notifier = require('../utils/notifications');
+const userModel = require('../models/userModel');
+const grievanceModel = require('../models/grievanceModel');
 
-const messageController = {
-  sendMessage: async (req, res) => {
+const messageController = {  sendMessage: async (req, res) => {
     try {
       const { grievanceId, receiverId, content } = req.body;
       const senderId = req.user.id;
 
       await Message.create(grievanceId, senderId, receiverId, content);
       
-      // Send notification to the receiver
-      await sendNotification({
-        userId: receiverId,
-        type: 'new_message',
-        content: `You have a new message regarding grievance #${grievanceId}`,
-        link: `/view-grievances/${grievanceId}`
+      // Get sender, receiver, and grievance information for beautiful email
+      userModel.findUserById(senderId, (senderErr, sender) => {
+        if (senderErr) {
+          console.error('Error fetching sender info:', senderErr);
+          return;
+        }
+
+        userModel.findUserById(receiverId, (receiverErr, receiver) => {
+          if (receiverErr) {
+            console.error('Error fetching receiver info:', receiverErr);
+            return;
+          }
+
+          grievanceModel.getGrievanceById(grievanceId, (grievanceErr, grievance) => {
+            if (grievanceErr) {
+              console.error('Error fetching grievance info:', grievanceErr);
+              return;
+            }
+
+            const grievanceData = {
+              id: grievance.id,
+              type: grievance.type,
+              subcategory: grievance.subcategory,
+              description: grievance.description
+            };
+
+            // Create message preview (first 100 characters)
+            const messagePreview = content.length > 100 ? 
+              content.substring(0, 100) + '...' : content;
+
+            // Send beautiful new message email notification
+            notifier.sendNewMessageEmail(
+              receiverId,
+              grievanceData,
+              sender.name || sender.email,
+              messagePreview,
+              receiver.name || receiver.email,
+              (emailErr) => {
+                if (emailErr) console.error('Error sending new message email:', emailErr);
+              }
+            );
+          });
+        });
       });
 
       res.json({ success: true, message: 'Message sent successfully' });

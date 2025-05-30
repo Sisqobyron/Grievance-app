@@ -5,17 +5,19 @@ exports.createGrievance = (grievance, callback) => {
   const {
     student_id,
     type,
+    subcategory,
     description,
     file_path,
     submission_date,
-    priority_level
+    priority_level,
+    additional_data
   } = grievance;
 
   const sql = `
-    INSERT INTO grievances (student_id, type, description, file_path, submission_date, priority_level)
-    VALUES (?, ?, ?, ?, ?, ?)`;
+    INSERT INTO grievances (student_id, type, subcategory, description, file_path, submission_date, priority_level, additional_data)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  db.run(sql, [student_id, type, description, file_path, submission_date, priority_level], function (err) {
+  db.run(sql, [student_id, type, subcategory, description, file_path, submission_date, priority_level, additional_data], function (err) {
     if (err) return callback(err);
     callback(null, { id: this.lastID, ...grievance });
   });

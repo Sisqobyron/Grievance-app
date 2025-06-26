@@ -50,7 +50,7 @@ your-repo/
 - **Root Directory:** `backend`
 
 **Build & Deploy:**
-- **Build Command:** `npm install`
+- **Build Command:** `npm install && npm rebuild sqlite3`
 - **Start Command:** `npm start`
 
 **Environment Variables:**
@@ -136,20 +136,31 @@ Should load the login page.
 
 ### Common Issues:
 
-**1. CORS Errors**
+**1. SQLite3 Native Binding Error**
+```
+Error: invalid ELF header
+```
+**Solution:**
+- Use build command: `npm install && npm rebuild sqlite3`
+- Ensure `node-gyp` is in devDependencies
+- Alternative: Switch to PostgreSQL (recommended for production)
+
+**2. CORS Errors**
+**2. CORS Errors**
 - Ensure `FRONTEND_URL` is correctly set in backend
 - Check CORS configuration in `server.js`
 
-**2. API Connection Issues**
+**3. API Connection Issues**
+**3. API Connection Issues**
 - Verify `VITE_API_URL` in frontend environment
 - Check if backend service is running
 
-**3. Build Failures**
+**4. Build Failures**
 - Check Node.js version compatibility
 - Verify all dependencies are in `package.json`
 - Review build logs in Render dashboard
 
-**4. Database Issues**
+**5. Database Issues**
 - SQLite works but files may not persist
 - Consider upgrading to PostgreSQL for production
 

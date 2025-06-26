@@ -10,8 +10,11 @@ import {
   Button,
   Typography,
   Paper,
-  CircularProgress
+  CircularProgress,
+  alpha,
+  useTheme
 } from '@mui/material'
+import Logo from '../components/Logo'
 
 const validationSchema = Yup.object({
   email: Yup.string()

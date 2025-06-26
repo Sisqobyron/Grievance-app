@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
 import AuthProvider, { useAuth } from './contexts/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
-import Layout from './components/Layout'
+import Layout from './components/LayoutNew'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -19,58 +19,82 @@ import EscalationManagement from './components/EscalationManagement'
 import DeadlineTracking from './components/DeadlineTracking'
 import FeedbackSystem from './components/FeedbackSystem'
 
-// Create theme configuration
+// Create modern 2025 theme configuration
 const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#2563eb', // Modern blue
-      light: '#3b82f6',
-      dark: '#1d4ed8',
+      main: '#1976d2', // Professional blue matching your logo
+      light: '#42a5f5',
+      dark: '#1565c0',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#7c3aed', // Modern purple
-      light: '#8b5cf6',
-      dark: '#6d28d9',
+      main: '#9c27b0', // Modern purple accent
+      light: '#ba68c8',
+      dark: '#7b1fa2',
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#f8fafc',
+      default: '#fafafa',
       paper: '#ffffff',
     },
+    text: {
+      primary: '#2c2c2c',
+      secondary: '#666666',
+    },
     grey: {
-      50: '#f8fafc',
-      100: '#f1f5f9',
-      200: '#e2e8f0',
-      300: '#cbd5e1',
+      50: '#fafafa',
+      100: '#f5f5f5',
+      200: '#eeeeee',
+      300: '#e0e0e0',
+      400: '#bdbdbd',
+      500: '#9e9e9e',
     },
   },
   typography: {
-    fontFamily: [
-      'Inter',
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      'sans-serif'
-    ].join(','),
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontSize: '2.5rem',
       fontWeight: 700,
       letterSpacing: '-0.025em',
+      lineHeight: 1.2,
     },
     h2: {
       fontSize: '2rem',
       fontWeight: 600,
       letterSpacing: '-0.025em',
+      lineHeight: 1.3,
     },
     h3: {
-      fontSize: '1.5rem',
+      fontSize: '1.75rem',
       fontWeight: 600,
       letterSpacing: '-0.025em',
+    },
+    h4: {
+      fontSize: '1.5rem',
+      fontWeight: 600,
+    },
+    h5: {
+      fontSize: '1.25rem',
+      fontWeight: 500,
+    },
+    h6: {
+      fontSize: '1.1rem',
+      fontWeight: 500,
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.6,
+    },
+    body2: {
+      fontSize: '0.875rem',
+      lineHeight: 1.5,
     },
     button: {
       textTransform: 'none',
       fontWeight: 500,
+      fontSize: '0.95rem',
     },
   },
   shape: {
@@ -80,8 +104,9 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#f8fafc',
+          backgroundColor: '#fafafa',
           scrollBehavior: 'smooth',
+          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         },
       },
     },
@@ -89,10 +114,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        },
-        elevation1: {
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+          borderRadius: 12,
+          boxShadow: '0px 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.06)',
         },
       },
     },
@@ -100,16 +124,20 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          padding: '0.5rem 1.25rem',
-          transition: 'all 0.2s ease-in-out',
+          padding: '10px 24px',
+          textTransform: 'none',
+          fontWeight: 500,
+          fontSize: '0.95rem',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: 'none',
           '&:hover': {
             transform: 'translateY(-1px)',
+            boxShadow: '0px 4px 12px rgba(0,0,0,0.15)',
           },
         },
         contained: {
-          boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
           '&:hover': {
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            boxShadow: '0px 6px 16px rgba(0,0,0,0.2)',
           },
         },
       },
@@ -118,11 +146,35 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+          boxShadow: '0px 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.06)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+            transform: 'translateY(-4px)',
+            boxShadow: '0px 12px 40px rgba(0,0,0,0.12)',
           },
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 8,
+            '&:hover fieldset': {
+              borderColor: '#1976d2',
+            },
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0px 1px 0px rgba(0,0,0,0.08)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          backdropFilter: 'blur(20px)',
+          backgroundColor: 'rgba(255,255,255,0.95)',
         },
       },
     },

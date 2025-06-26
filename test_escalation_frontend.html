@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escalation Management Test</title>
+</head>
+<body>
+    <h1>Escalation Management API Test</h1>
+    <div id="test-results"></div>
+
+    <script>
+        async function testEscalationAPIs() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '<p>Testing APIs...</p>';
+            
+            try {
+                // Test the three main endpoints the frontend uses
+                console.log('Testing escalation APIs...');
+                
+                const rulesResponse = await fetch('http://localhost:5000/api/escalation/rules');
+                const rulesData = await rulesResponse.json();
+                console.log('Rules:', rulesData);
+
+                const historyResponse = await fetch('http://localhost:5000/api/escalation/history');
+                const historyData = await historyResponse.json();
+                console.log('History:', historyData);
+
+                const metricsResponse = await fetch('http://localhost:5000/api/escalation/metrics');
+                const metricsData = await metricsResponse.json();
+                console.log('Metrics:', metricsData);
+
+                // Test data structure for frontend compatibility
+                const testRule = rulesData[0];
+                if (testRule) {
+                    console.log('Rule structure test:');
+                    console.log('- rule_name:', testRule.rule_name);
+                    console.log('- trigger_condition:', testRule.trigger_condition);
+                    console.log('- escalation_action:', testRule.escalation_action);
+                    console.log('- is_active:', testRule.is_active);
+                }
+
+                results.innerHTML = `
+                    <h2>✅ All APIs Working!</h2>
+                    <p><strong>Rules:</strong> ${rulesData.length} found</p>
+                    <p><strong>History:</strong> ${historyData.length} entries</p>
+                    <p><strong>Metrics:</strong> ${metricsData.activeRules} active rules</p>
+                    <pre>${JSON.stringify(metricsData, null, 2)}</pre>
+                `;
+
+            } catch (error) {
+                console.error('API test failed:', error);
+                results.innerHTML = `<h2>❌ API Test Failed</h2><p>${error.message}</p>`;
+            }
+        }
+
+        // Run test when page loads
+        testEscalationAPIs();
+    </script>
+</body>
+</html>

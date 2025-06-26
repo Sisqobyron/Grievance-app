@@ -24,10 +24,25 @@ import {
   DialogContent,
   IconButton,
   Grid,
-  Divider
+  Divider,
+  Tabs,
+  Tab
 } from '@mui/material'
-import { Message, Close, Refresh, Visibility, GetApp, Preview, Image as ImageIcon, PictureAsPdf } from '@mui/icons-material'
+import { 
+  Message, 
+  Close, 
+  Refresh, 
+  Visibility, 
+  GetApp, 
+  Preview, 
+  Image as ImageIcon, 
+  PictureAsPdf,
+  Timeline as TimelineIcon,
+  Feedback as FeedbackIcon
+} from '@mui/icons-material'
 import Messages from '../components/Messages'
+import GrievanceTimeline from '../components/GrievanceTimeline'
+import FeedbackDialog from '../components/FeedbackDialog'
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -52,7 +67,9 @@ export default function ViewGrievances() {
   const [messageDialogOpen, setMessageDialogOpen] = useState(false)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [attachmentViewerOpen, setAttachmentViewerOpen] = useState(false)
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
   const [selectedGrievance, setSelectedGrievance] = useState(null)
+  const [detailTab, setDetailTab] = useState(0)
 
   const fetchGrievances = useCallback(async () => {
     try {
@@ -108,10 +125,14 @@ export default function ViewGrievances() {
     setSelectedGrievance(grievance)
     setDetailDialogOpen(true)
   }
-
   const openAttachmentViewer = (grievance) => {
     setSelectedGrievance(grievance)
     setAttachmentViewerOpen(true)
+  }
+
+  const openFeedbackDialog = (grievance) => {
+    setSelectedGrievance(grievance)
+    setFeedbackDialogOpen(true)
   }
 
   const getFileType = (filename) => {
@@ -231,8 +252,7 @@ export default function ViewGrievances() {
                         title="View Details"
                       >
                         <Visibility />
-                      </IconButton>
-                      <IconButton
+                      </IconButton>                      <IconButton
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -243,6 +263,32 @@ export default function ViewGrievances() {
                       >
                         <Message />
                       </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedGrievance(grievance);
+                          setDetailTab(1); // Set to timeline tab
+                          openDetailDialog(grievance);
+                        }}
+                        color="info"
+                        title="View Timeline"
+                      >
+                        <TimelineIcon />
+                      </IconButton>
+                      {(grievance.status === 'Resolved' && user.role === 'student') && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openFeedbackDialog(grievance);
+                          }}
+                          color="success"
+                          title="Submit Feedback"
+                        >
+                          <FeedbackIcon />
+                        </IconButton>
+                      )}
                       {user.role === 'staff' && (
                         <FormControl size="small">
                           <Select
@@ -298,12 +344,13 @@ export default function ViewGrievances() {
             />
           )}
         </DialogContent>
-      </Dialog>
-
-      {/* Detail Dialog */}
+      </Dialog>      {/* Detail Dialog with Tabs */}
       <Dialog
         open={detailDialogOpen}
-        onClose={() => setDetailDialogOpen(false)}
+        onClose={() => {
+          setDetailDialogOpen(false);
+          setDetailTab(0);
+        }}
         maxWidth="md"
         fullWidth
       >
@@ -311,230 +358,235 @@ export default function ViewGrievances() {
           Grievance Details - #{selectedGrievance?.id}
           <IconButton
             sx={{ position: 'absolute', right: 8, top: 8 }}
-            onClick={() => setDetailDialogOpen(false)}
+            onClick={() => {
+              setDetailDialogOpen(false);
+              setDetailTab(0);
+            }}
           >
             <Close />
           </IconButton>
         </DialogTitle>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={detailTab} onChange={(e, newValue) => setDetailTab(newValue)}>
+            <Tab label="Details" />
+            <Tab label="Timeline" />
+            <Tab label="Feedback" />
+          </Tabs>
+        </Box>
         <DialogContent sx={{ mt: 2 }}>
           {selectedGrievance && (
-            <Grid container spacing={3}>
-              {/* Basic Information */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Basic Information
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Grievance ID
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  #{selectedGrievance.id}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Status
-                </Typography>
-                <Chip
-                  label={selectedGrievance.status}
-                  color={getStatusColor(selectedGrievance.status)}
-                  sx={{ mb: 2 }}
-                />
-              </Grid>
-              
-              {user.role === 'staff' && (
-                <>
+            <>
+              {/* Details Tab */}
+              {detailTab === 0 && (
+                <Grid container spacing={3}>
+                  {/* Basic Information */}
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom>
+                      Basic Information
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                  </Grid>
+                  
                   <Grid item xs={6}>
                     <Typography variant="subtitle2" color="textSecondary">
-                      Student Name
+                      Grievance ID
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 2 }}>
-                      {selectedGrievance.student_name}
+                      #{selectedGrievance.id}
                     </Typography>
                   </Grid>
                   
                   <Grid item xs={6}>
                     <Typography variant="subtitle2" color="textSecondary">
-                      Program
+                      Status
                     </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      {selectedGrievance.program}
-                    </Typography>
+                    <Chip
+                      label={selectedGrievance.status}
+                      color={getStatusColor(selectedGrievance.status)}
+                      sx={{ mb: 2 }}
+                    />
                   </Grid>
                   
-                  <Grid item xs={6}>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Level
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      Level {selectedGrievance.level}
-                    </Typography>
-                  </Grid>
-                </>
-              )}
-                <Grid item xs={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Category
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  {selectedGrievance.type}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Subcategory
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  {selectedGrievance.subcategory || 'N/A'}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Type
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  {selectedGrievance.type}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Priority Level
-                </Typography>
-                <Chip
-                  label={selectedGrievance.priority_level}
-                  color={selectedGrievance.priority_level === 'Urgent' ? 'error' : 'default'}
-                  sx={{ mb: 2 }}
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Submission Date
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  {new Date(selectedGrievance.submission_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </Typography>
-              </Grid>
-              
-              {/* Description */}
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                  Description
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
-                  {selectedGrievance.description}
-                </Typography>
-              </Grid>
-              
-              {/* Additional Details */}
-              {(selectedGrievance.details || selectedGrievance.additional_info) && (
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Additional Details
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
-                    {selectedGrievance.details || selectedGrievance.additional_info}
-                  </Typography>
-                </Grid>
-              )}
-                {/* Attachments */}
-              {selectedGrievance.file_path && (
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Attachments
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                    {(() => {
-                      const filename = selectedGrievance.file_path.split(/[\\/]/).pop()
-                      const fileType = getFileType(filename)
+                  {user.role === 'staff' && (
+                    <>
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Student Name
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 2 }}>
+                          {selectedGrievance.student_name}
+                        </Typography>
+                      </Grid>
                       
-                      return (
-                        <>
-                          {(fileType === 'image' || fileType === 'pdf') && (
-                            <Button
-                              variant="contained"
-                              startIcon={<Preview />}
-                              onClick={() => openAttachmentViewer(selectedGrievance)}
-                              sx={{ mr: 1 }}
-                            >
-                              View {fileType === 'image' ? 'Image' : 'PDF'}
-                            </Button>
-                          )}
-                          <Button
-                            variant="outlined"
-                            startIcon={getFileIcon(filename)}
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = `http://localhost:5000/uploads/${filename}`;
-                              link.download = filename;
-                              link.click();
-                            }}
-                          >
-                            Download
-                          </Button>
-                          <Typography variant="body2" color="textSecondary" sx={{ ml: 2 }}>
-                            {filename}
-                          </Typography>
-                        </>
-                      )
-                    })()}
-                  </Box>
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Program
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 2 }}>
+                          {selectedGrievance.program}
+                        </Typography>
+                      </Grid>
+                      
+                      <Grid item xs={6}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Level
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 2 }}>
+                          Level {selectedGrievance.level}
+                        </Typography>
+                      </Grid>
+                    </>
+                  )}
+                    <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      Category
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      {selectedGrievance.type}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      Subcategory
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      {selectedGrievance.subcategory || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      Priority Level
+                    </Typography>
+                    <Chip
+                      label={selectedGrievance.priority_level}
+                      color={selectedGrievance.priority_level === 'Urgent' ? 'error' : 'default'}
+                      sx={{ mb: 2 }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      Submission Date
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      {new Date(selectedGrievance.submission_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Typography>
+                  </Grid>
+                  
+                  {/* Description */}
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                      Description
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                      {selectedGrievance.description}
+                    </Typography>
+                  </Grid>
+                  
+                  {/* Additional Details */}
+                  {(selectedGrievance.details || selectedGrievance.additional_info) && (
+                    <Grid item xs={12}>
+                      <Typography variant="h6" gutterBottom>
+                        Additional Details
+                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+                      <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                        {selectedGrievance.details || selectedGrievance.additional_info}
+                      </Typography>
+                    </Grid>
+                  )}
+                    {/* Attachments */}
+                  {selectedGrievance.file_path && (
+                    <Grid item xs={12}>
+                      <Typography variant="h6" gutterBottom>
+                        Attachments
+                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        {(() => {
+                          const filename = selectedGrievance.file_path.split(/[\\/]/).pop()
+                          const fileType = getFileType(filename)
+                          
+                          return (
+                            <>
+                              {(fileType === 'image' || fileType === 'pdf') && (
+                                <Button
+                                  variant="contained"
+                                  startIcon={<Preview />}
+                                  onClick={() => openAttachmentViewer(selectedGrievance)}
+                                  sx={{ mr: 1 }}
+                                >
+                                  View {fileType === 'image' ? 'Image' : 'PDF'}
+                                </Button>
+                              )}
+                              <Button
+                                variant="outlined"
+                                startIcon={getFileIcon(filename)}
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = `http://localhost:5000/uploads/${filename}`;
+                                  link.download = filename;
+                                  link.click();
+                                }}
+                              >
+                                Download
+                              </Button>
+                              <Typography variant="body2" color="textSecondary" sx={{ ml: 2 }}>
+                                {filename}
+                              </Typography>
+                            </>
+                          )
+                        })()}
+                      </Box>
+                    </Grid>
+                  )}
                 </Grid>
               )}
-              
-              {/* Action Buttons */}
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<Message />}
-                    onClick={() => {
-                      setDetailDialogOpen(false);
-                      openMessageDialog(selectedGrievance);
-                    }}
-                  >
-                    View Messages
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setDetailDialogOpen(false)}
-                  >
-                    Close
-                  </Button>
+
+              {/* Timeline Tab */}
+              {detailTab === 1 && (
+                <Box sx={{ mt: 2 }}>
+                  <GrievanceTimeline grievanceId={selectedGrievance.id} />
                 </Box>
-              </Grid>
-            </Grid>
+              )}
+
+              {/* Feedback Tab */}
+              {detailTab === 2 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Feedback & Reviews
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    Feedback for grievance #{selectedGrievance.id}
+                  </Typography>
+                  {/* Feedback content will be implemented here */}
+                  <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                    Feedback system integration coming soon...
+                  </Typography>
+                </Box>
+              )}
+            </>
           )}
         </DialogContent>
-      </Dialog>
-
-      {/* Attachment Viewer Dialog */}
+      </Dialog>      {/* Attachment Viewer Dialog */}
       <Dialog
         open={attachmentViewerOpen}
         onClose={() => setAttachmentViewerOpen(false)}
         maxWidth="lg"
         fullWidth
-        PaperProps={{
-          sx: { height: '90vh' }
+        slotProps={{
+          paper: { sx: { height: '90vh' } }
         }}
-      >        <DialogTitle>
+      ><DialogTitle>
           Attachment Viewer - {selectedGrievance?.file_path?.split(/[\\/]/).pop()}
           <IconButton
             sx={{ position: 'absolute', right: 8, top: 8 }}
@@ -615,9 +667,15 @@ export default function ViewGrievances() {
                 </Button>
               </Box>
             )
-          })()}
-        </DialogContent>
+          })()}        </DialogContent>
       </Dialog>
+
+      {/* Feedback Dialog */}
+      <FeedbackDialog
+        open={feedbackDialogOpen}
+        onClose={() => setFeedbackDialogOpen(false)}
+        grievance={selectedGrievance}
+      />
     </Container>
   )
 }

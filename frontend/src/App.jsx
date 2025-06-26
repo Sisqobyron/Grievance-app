@@ -3,7 +3,7 @@ import { ThemeProvider, CssBaseline, createTheme } from '@mui/material'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
-import AuthProvider from './contexts/AuthContext'
+import AuthProvider, { useAuth } from './contexts/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -13,7 +13,11 @@ import StaffDashboard from './pages/StaffDashboard'
 import SubmitGrievance from './pages/SubmitGrievance'
 import ViewGrievances from './pages/ViewGrievances'
 import Notifications from './pages/Notifications'
-import { useAuth } from './contexts/AuthContext'
+import CoordinatorDashboard from './components/CoordinatorDashboard'
+import CoordinatorWorkspaceDashboard from './components/CoordinatorWorkspaceDashboard'
+import EscalationManagement from './components/EscalationManagement'
+import DeadlineTracking from './components/DeadlineTracking'
+import FeedbackSystem from './components/FeedbackSystem'
 
 // Create theme configuration
 const theme = createTheme({
@@ -161,6 +165,31 @@ function App() {
               <Route path="/notifications" element={
                 <PrivateRoute>
                   <Notifications />
+                </PrivateRoute>
+              } />
+              <Route path="/coordinator" element={
+                <PrivateRoute>
+                  <CoordinatorDashboard />
+                </PrivateRoute>
+              } />
+              <Route path="/workspace-coordinator" element={
+                <PrivateRoute>
+                  <CoordinatorWorkspaceDashboard />
+                </PrivateRoute>
+              } />
+              <Route path="/escalation" element={
+                <PrivateRoute>
+                  <EscalationManagement />
+                </PrivateRoute>
+              } />
+              <Route path="/deadlines" element={
+                <PrivateRoute>
+                  <DeadlineTracking />
+                </PrivateRoute>
+              } />
+              <Route path="/feedback" element={
+                <PrivateRoute>
+                  <FeedbackSystem />
                 </PrivateRoute>
               } />
             </Routes>

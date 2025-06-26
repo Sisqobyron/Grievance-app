@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { motion } from 'framer-motion'
@@ -28,7 +27,6 @@ import {
   CardContent,
   IconButton,
   Skeleton,
-  Fade,
   useTheme
 } from '@mui/material'
 import { 
@@ -38,7 +36,7 @@ import {
   List as ListIcon, 
   Assessment, 
   CheckCircle, 
-  Warning 
+  Warning
 } from '@mui/icons-material'
 
 const containerAnimation = {
@@ -112,7 +110,6 @@ const StatCard = ({ title, value, color, icon, isLoading }) => (
 )
 
 export default function StaffDashboard() {
-  const { user } = useAuth()
   const theme = useTheme()
   const [grievances, setGrievances] = useState([])
   const [loading, setLoading] = useState(true)
@@ -139,14 +136,14 @@ export default function StaffDashboard() {
       const total = response.data.length
       const resolved = response.data.filter(g => g.status === 'Resolved').length
       const urgent = response.data.filter(g => g.priority_level === 'Urgent').length
-      
-      setStats({
+        setStats({
         total,
         pending: total - resolved,
         resolved,
         urgent
       })
     } catch (error) {
+      console.error('Failed to fetch grievances:', error)
       toast.error('Failed to fetch grievances')
     } finally {
       setLoading(false)
@@ -178,12 +175,12 @@ export default function StaffDashboard() {
       
       toast.success('Status updated successfully')
     } catch (error) {
+      console.error('Failed to update status:', error)
       toast.error('Failed to update status')
     } finally {
       setUpdatingId(null)
     }
   }
-
   const openAttachment = (grievance) => {
     setSelectedGrievance(grievance)
     setViewerOpen(true)
@@ -219,12 +216,11 @@ export default function StaffDashboard() {
                       ))}
                   </TableRow>
                 </TableHead>
-                <TableBody>
-                  {[1, 2, 3].map((row) => (
+                <TableBody>                  {[1, 2, 3].map((row) => (
                     <TableRow key={row}>
-                      {[...Array(10)].map((_, i) => (
-                        <TableCell key={i}>
-                          <Skeleton width={i === 4 ? 200 : 100} />
+                      {[...Array(10)].map((_, colIndex) => (
+                        <TableCell key={`${row}-${colIndex}`}>
+                          <Skeleton width={colIndex === 4 ? 200 : 100} />
                         </TableCell>
                       ))}
                     </TableRow>
@@ -285,9 +281,7 @@ export default function StaffDashboard() {
                 icon={<Warning sx={{ color: theme.palette.error.main }} />}
               />
             </Grid>
-          </Grid>
-
-          <motion.div variants={itemAnimation}>
+          </Grid>          <motion.div variants={itemAnimation}>
             <Paper sx={{ p: 3 }} className="glass-effect">
               <Typography variant="h6" gutterBottom>
                 All Grievances
@@ -396,17 +390,16 @@ export default function StaffDashboard() {
         </Box>
       </motion.div>
 
-      {/* Attachment Viewer Dialog with updated styling */}
-      <Dialog
+      {/* Attachment Viewer Dialog with updated styling */}      <Dialog
         open={viewerOpen}
         onClose={() => setViewerOpen(false)}
         maxWidth="md"
         fullWidth
-        TransitionComponent={Fade}
-        transitionDuration={300}
-        PaperProps={{
-          className: 'glass-effect',
-          sx: { borderRadius: '16px' }
+        slotProps={{
+          paper: {
+            className: 'glass-effect',
+            sx: { borderRadius: '16px' }
+          }
         }}
       >
         <DialogTitle>
@@ -420,12 +413,12 @@ export default function StaffDashboard() {
         </DialogTitle>
         <DialogContent>
           {selectedGrievance?.file_path && (
-            selectedGrievance.file_path.toLowerCase().endsWith('.pdf') ? (
-              <iframe
+            selectedGrievance.file_path.toLowerCase().endsWith('.pdf') ? (              <iframe
                 src={`http://localhost:5000/${selectedGrievance.file_path}`}
                 width="100%"
                 height="500px"
                 style={{ border: 'none' }}
+                title="Grievance Attachment PDF"
               />
             ) : (
               <img

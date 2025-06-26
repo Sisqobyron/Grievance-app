@@ -1,0 +1,5 @@
+# Build command for backend
+npm install
+
+# Start command for backend
+npm start

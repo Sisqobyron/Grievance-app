@@ -15,22 +15,34 @@ import {
   ListItem,
   ListItemText,
   Divider,
-  CircularProgress
+  CircularProgress,
+  Chip,
+  Alert,
+  LinearProgress
 } from '@mui/material';
+import {
+  AccessTime as TimeIcon,
+  Warning as WarningIcon,
+  TrendingUp as TrendingIcon,
+  Assignment as AssignmentIcon
+} from '@mui/icons-material';
 import GrievanceViz from '../components/GrievanceViz';
+import DeadlineTracking from '../components/DeadlineTracking';
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [stats, setStats] = useState({
+  const { user } = useAuth();  const [stats, setStats] = useState({
     totalGrievances: 0,
     resolvedGrievances: 0,
-    pendingGrievances: 0
+    pendingGrievances: 0,
+    overdueGrievances: 0,
+    averageResolutionTime: 0,
+    criticalGrievances: 0
   });
   const [recentGrievances, setRecentGrievances] = useState([]);
-  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [recentNotifications, setRecentNotifications] = useState([]);  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showViz, setShowViz] = useState(false);
-
+  const [showDeadlines, setShowDeadlines] = useState(false);
   const fetchDashboardData = useCallback(async () => {
     try {
       // Fetch grievances
@@ -40,17 +52,36 @@ export default function Dashboard() {
       const grievancesResponse = await axios.get(grievancesUrl);
       const grievances = grievancesResponse.data;
 
-      // Calculate stats
+      // Calculate enhanced stats
       const resolved = grievances.filter(g => g.status === 'Resolved').length;
       const total = grievances.length;
+      const overdue = grievances.filter(g => {
+        if (g.deadline_date && g.status !== 'Resolved') {
+          return new Date(g.deadline_date) < new Date();
+        }
+        return false;
+      }).length;
+      const critical = grievances.filter(g => g.priority === 'Critical' && g.status !== 'Resolved').length;
+
       setStats({
         totalGrievances: total,
         resolvedGrievances: resolved,
-        pendingGrievances: total - resolved
+        pendingGrievances: total - resolved,
+        overdueGrievances: overdue,
+        averageResolutionTime: 0, // TODO: Calculate from timeline data
+        criticalGrievances: critical
       });
 
       // Get recent grievances
       setRecentGrievances(grievances.slice(0, 5));
+
+      // Fetch upcoming deadlines
+      try {
+        const deadlinesResponse = await axios.get('http://localhost:5000/api/deadlines/upcoming');
+        setUpcomingDeadlines(deadlinesResponse.data.slice(0, 5));
+      } catch (error) {
+        console.error('Error fetching deadlines:', error);
+      }
 
       // Fetch notifications
       const notificationsResponse = await axios.get(
@@ -101,11 +132,9 @@ export default function Dashboard() {
             </Typography>
             <GrievanceViz />
           </Paper>
-        )}
-
-        {/* Stats Cards */}
+        )}        {/* Enhanced Stats Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
@@ -117,7 +146,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
@@ -126,10 +155,18 @@ export default function Dashboard() {
                 <Typography variant="h3" color="success.main">
                   {stats.resolvedGrievances}
                 </Typography>
+                {stats.totalGrievances > 0 && (
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(stats.resolvedGrievances / stats.totalGrievances) * 100}
+                    color="success"
+                    sx={{ mt: 1 }}
+                  />
+                )}
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
@@ -141,12 +178,85 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ bgcolor: stats.overdueGrievances > 0 ? 'error.light' : 'background.paper' }}>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                  <WarningIcon sx={{ mr: 1, fontSize: 20 }} />
+                  Overdue
+                </Typography>
+                <Typography variant="h3" color={stats.overdueGrievances > 0 ? 'error.main' : 'text.primary'}>
+                  {stats.overdueGrievances}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
 
-        {/* Recent Activities */}
+        {/* Critical Alerts */}
+        {stats.criticalGrievances > 0 && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            <Typography variant="h6">
+              {stats.criticalGrievances} Critical Grievance{stats.criticalGrievances > 1 ? 's' : ''} Require Immediate Attention
+            </Typography>
+          </Alert>
+        )}
+
+        {/* Quick Actions */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button 
+              variant="outlined" 
+              fullWidth
+              startIcon={<TimeIcon />}
+              onClick={() => setShowDeadlines(!showDeadlines)}
+            >
+              {showDeadlines ? 'Hide' : 'Show'} Deadlines
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button 
+              variant="outlined" 
+              fullWidth
+              startIcon={<TrendingIcon />}
+              onClick={() => setShowViz(!showViz)}
+            >
+              {showViz ? 'Hide' : 'Show'} Analytics
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button 
+              variant="contained" 
+              fullWidth
+              component={RouterLink}
+              to="/submit-grievance"
+              startIcon={<AssignmentIcon />}
+            >
+              Submit New
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button 
+              variant="contained" 
+              fullWidth
+              component={RouterLink}
+              to="/grievances"
+              color="secondary"
+            >
+              View All
+            </Button>
+          </Grid>
+        </Grid>
+
+        {/* Deadline Tracking Component */}
+        {showDeadlines && (
+          <Box sx={{ mb: 4 }}>
+            <DeadlineTracking />
+          </Box>
+        )}        {/* Recent Activities */}
         <Grid container spacing={3}>
           {/* Recent Grievances */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Paper sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6">Recent Grievances</Typography>
@@ -160,9 +270,21 @@ export default function Dashboard() {
                     <ListItem>
                       <ListItemText
                         primary={grievance.type}
-                        secondary={`Status: ${grievance.status} | ${new Date(
-                          grievance.submission_date
-                        ).toLocaleDateString()}`}
+                        secondary={
+                          <Box>
+                            <Typography variant="body2" color="textSecondary">
+                              Status: {grievance.status} | {new Date(grievance.submission_date).toLocaleDateString()}
+                            </Typography>
+                            {grievance.priority && (
+                              <Chip 
+                                label={grievance.priority} 
+                                size="small" 
+                                color={grievance.priority === 'Critical' ? 'error' : grievance.priority === 'High' ? 'warning' : 'default'}
+                                sx={{ mt: 0.5 }}
+                              />
+                            )}
+                          </Box>
+                        }
                       />
                     </ListItem>
                     {index < recentGrievances.length - 1 && <Divider />}
@@ -177,8 +299,54 @@ export default function Dashboard() {
             </Paper>
           </Grid>
 
-          {/* Recent Notifications */}
-          <Grid item xs={12} md={6}>
+          {/* Upcoming Deadlines */}
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+                  <TimeIcon sx={{ mr: 1 }} />
+                  Upcoming Deadlines
+                </Typography>
+              </Box>
+              <List>
+                {upcomingDeadlines.map((deadline, index) => {
+                  const daysLeft = Math.ceil((new Date(deadline.deadline_date) - new Date()) / (1000 * 60 * 60 * 24));
+                  const isOverdue = daysLeft < 0;
+                  const isUrgent = daysLeft <= 2 && daysLeft >= 0;
+                  
+                  return (
+                    <div key={deadline.id}>
+                      <ListItem>
+                        <ListItemText
+                          primary={`Grievance #${deadline.grievance_id}`}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2" color="textSecondary">
+                                Due: {new Date(deadline.deadline_date).toLocaleDateString()}
+                              </Typography>
+                              <Chip 
+                                label={isOverdue ? 'OVERDUE' : isUrgent ? `${daysLeft} day${daysLeft > 1 ? 's' : ''} left` : `${daysLeft} days left`}
+                                size="small"
+                                color={isOverdue ? 'error' : isUrgent ? 'warning' : 'success'}
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                      {index < upcomingDeadlines.length - 1 && <Divider />}
+                    </div>
+                  );
+                })}
+                {upcomingDeadlines.length === 0 && (
+                  <ListItem>
+                    <ListItemText primary="No upcoming deadlines" />
+                  </ListItem>
+                )}
+              </List>
+            </Paper>
+          </Grid>          {/* Recent Notifications */}
+          <Grid item xs={12} md={4}>
             <Paper sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6">Recent Notifications</Typography>

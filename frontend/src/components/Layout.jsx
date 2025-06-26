@@ -12,28 +12,22 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Toolbar,
-  Typography,
-  Button,
-  Avatar,
-  Tooltip,
-  Badge,
+  Toolbar,  Typography,
+  Avatar,Tooltip,
   useTheme,
   useMediaQuery,
-  alpha,
-  Collapse
+  alpha
 } from '@mui/material'
 import {
   Menu as MenuIcon,
   Dashboard,
   Create,
   List as ListIcon,
-  Notifications,
-  Logout,
-  ChevronLeft,
-  Person,
-  ExpandLess,
-  ExpandMore
+  Notifications,  Logout,
+  SupervisorAccount,
+  TrendingUp,
+  AccessTime,
+  Feedback
 } from '@mui/icons-material'
 
 const drawerWidth = 280
@@ -46,7 +40,6 @@ const pageTransition = {
 
 export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [expanded, setExpanded] = useState('')
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -56,16 +49,20 @@ export default function Layout({ children }) {
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
   }
-
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
-
+  
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
     { text: 'Submit Grievance', icon: <Create />, path: '/submit-grievance', role: 'student' },
     { text: 'View Grievances', icon: <ListIcon />, path: '/grievances' },
+    { text: 'My Workspace', icon: <SupervisorAccount />, path: '/workspace-coordinator' }, // Temporarily removed role restriction
+    { text: 'Coordinator Admin', icon: <SupervisorAccount />, path: '/coordinator', role: 'staff' },
+    { text: 'Escalation', icon: <TrendingUp />, path: '/escalation', role: 'staff' },
+    { text: 'Deadlines', icon: <AccessTime />, path: '/deadlines', role: 'staff' },
+    { text: 'Feedback', icon: <Feedback />, path: '/feedback' },
     { text: 'Notifications', icon: <Notifications />, path: '/notifications' }
   ]
 
@@ -146,12 +143,8 @@ export default function Layout({ children }) {
             >
               <ListItemIcon sx={{ color: theme.palette.primary.main }}>
                 {item.icon}
-              </ListItemIcon>
-              <ListItemText 
+              </ListItemIcon>              <ListItemText 
                 primary={item.text}
-                primaryTypographyProps={{
-                  fontWeight: 500
-                }}
               />
             </ListItem>
           )

@@ -83,6 +83,10 @@ Click "Create Web Service" and wait for deployment.
 - **Build Command:** `npm install && npm run build`
 - **Publish Directory:** `dist`
 
+**Important for SPA Routing:**
+- The `_redirects` file in `/public` handles client-side routing
+- All routes redirect to `index.html` for React Router to handle
+
 **Environment Variables:**
 ```
 VITE_API_URL=https://your-backend-app.onrender.com

@@ -1,7 +1,7 @@
 // API Configuration for different environments
 const API_CONFIG = {
   development: 'http://localhost:5000',
-  production: import.meta.env.VITE_API_URL || 'https://student-grievance-backend.onrender.com/'
+  production: import.meta.env.VITE_API_URL || 'https://student-grievance-backend.onrender.com'
 };
 
 const isDevelopment = import.meta.env.MODE === 'development';

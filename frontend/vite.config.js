@@ -15,6 +15,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    chunkSizeWarningLimit: 1600
-  }
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          mui: ['@mui/material', '@mui/icons-material']
+        }
+      }
+    }
+  },
+  // Handle client-side routing for SPA
+  base: '/'
 })

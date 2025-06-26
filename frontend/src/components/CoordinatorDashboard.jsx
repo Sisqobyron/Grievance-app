@@ -37,7 +37,7 @@ import {
   Delete
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import api from '../config/axios';
 import { toast } from 'react-toastify';
 
 const StatCard = ({ title, value, icon, color, subtitle }) => (
@@ -113,22 +113,20 @@ const CoordinatorDashboard = () => {
     fetchCoordinators();
     fetchStats();
   }, []);
-
   const fetchCoordinators = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/coordinators');
+      const response = await api.get('/api/coordinators');
       setCoordinators(response.data);
     } catch (error) {
       console.error('Error fetching coordinators:', error);
       toast.error('Failed to fetch coordinators');
     }
   };
-
   const fetchStats = async () => {
     try {
       const [coordResponse, assignmentResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/coordinators'),
-        axios.get('http://localhost:5000/api/coordinators/assignments')
+        api.get('/api/coordinators'),
+        api.get('/api/coordinators/assignments')
       ]);
 
       const coordinators = coordResponse.data;
@@ -159,7 +157,7 @@ const CoordinatorDashboard = () => {
 
   const handleCreateCoordinator = async () => {
     try {
-      await axios.post('http://localhost:5000/api/coordinators', formData);
+      await api.post('/api/coordinators', formData);
       toast.success('Coordinator created successfully');
       setDialogOpen(false);
       fetchCoordinators();
@@ -173,7 +171,7 @@ const CoordinatorDashboard = () => {
 
   const handleUpdateCoordinator = async () => {
     try {
-      await axios.put(`http://localhost:5000/api/coordinators/${editingCoordinator.id}`, formData);
+      await api.put(`/api/coordinators/${editingCoordinator.id}`, formData);
       toast.success('Coordinator updated successfully');
       setDialogOpen(false);
       setEditingCoordinator(null);
@@ -189,7 +187,7 @@ const CoordinatorDashboard = () => {
   const handleDeleteCoordinator = async (id) => {
     if (window.confirm('Are you sure you want to delete this coordinator?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/coordinators/${id}`);
+        await api.delete(`/api/coordinators/${id}`);
         toast.success('Coordinator deleted successfully');
         fetchCoordinators();
         fetchStats();

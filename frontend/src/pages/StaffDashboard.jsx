@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '../config/axios'
 import { toast } from 'react-toastify'
 import { motion } from 'framer-motion'
 import {
@@ -126,10 +126,9 @@ export default function StaffDashboard() {
   useEffect(() => {
     fetchGrievances()
   }, [])
-
   const fetchGrievances = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/grievances')
+      const response = await api.get('/api/grievances')
       setGrievances(response.data)
       
       // Calculate stats
@@ -149,11 +148,10 @@ export default function StaffDashboard() {
       setLoading(false)
     }
   }
-
   const handleStatusUpdate = async (grievanceId, newStatus) => {
     setUpdatingId(grievanceId)
     try {
-      await axios.put(`http://localhost:5000/api/grievances/${grievanceId}/status`, {
+      await api.put(`/api/grievances/${grievanceId}/status`, {
         status: newStatus
       })
       

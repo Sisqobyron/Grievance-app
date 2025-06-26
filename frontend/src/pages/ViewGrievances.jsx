@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import axios from 'axios'
+import api from '../config/axios'
 import { toast } from 'react-toastify'
 import {
   Container,
@@ -71,13 +71,12 @@ export default function ViewGrievances() {
   const [selectedGrievance, setSelectedGrievance] = useState(null)
   const [detailTab, setDetailTab] = useState(0)
 
-  const fetchGrievances = useCallback(async () => {
-    try {
+  const fetchGrievances = useCallback(async () => {    try {
       const url = user.role === 'student'
-        ? `http://localhost:5000/api/grievances/student/${user.id}`
-        : 'http://localhost:5000/api/grievances'
+        ? `/api/grievances/student/${user.id}`
+        : '/api/grievances'
       
-      const response = await axios.get(url)
+      const response = await api.get(url)
       setGrievances(response.data)
     } catch (err) {
       console.error('Error fetching grievances:', err)
@@ -95,11 +94,10 @@ export default function ViewGrievances() {
     setLoading(true)
     fetchGrievances()
   }
-
   const handleStatusUpdate = async (grievanceId, newStatus) => {
     setUpdatingId(grievanceId)
     try {
-      await axios.put(`http://localhost:5000/api/grievances/${grievanceId}/status`, {
+      await api.put(`/api/grievances/${grievanceId}/status`, {
         status: newStatus
       })
       

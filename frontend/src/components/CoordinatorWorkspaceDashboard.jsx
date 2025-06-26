@@ -54,7 +54,7 @@ import {
   Timeline as TimelineIcon,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../config/axios';
 import { toast } from 'react-toastify';
 
 const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
@@ -153,7 +153,7 @@ const CoordinatorWorkspaceDashboard = () => {
   const fetchCoordinatorData = useCallback(async () => {
     try {
       // Get coordinator info and stats
-      const response = await axios.get(`http://localhost:5000/api/coordinators/profile/${user.id}`);
+      const response = await api.get(`/api/coordinators/profile/${user.id}`);
       const coordinatorData = response.data;
       
       setCoordinatorStats({
@@ -171,7 +171,7 @@ const CoordinatorWorkspaceDashboard = () => {
 
   const fetchAssignedGrievances = useCallback(async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/coordinators/${user.id}/grievances`);
+      const response = await api.get(`/api/coordinators/${user.id}/grievances`);
       setAssignedGrievances(response.data);
     } catch (error) {
       console.error('Error fetching assigned grievances:', error);
@@ -183,7 +183,7 @@ const CoordinatorWorkspaceDashboard = () => {
 
   const fetchRecentActivity = useCallback(async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/coordinators/${user.id}/activity`);
+      const response = await api.get(`/api/coordinators/${user.id}/activity`);
       setRecentActivity(response.data);
     } catch (error) {
       console.error('Error fetching recent activity:', error);
@@ -192,7 +192,7 @@ const CoordinatorWorkspaceDashboard = () => {
 
   const fetchUpcomingDeadlines = useCallback(async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/coordinators/${user.id}/deadlines`);
+      const response = await api.get(`/api/coordinators/${user.id}/deadlines`);
       setUpcomingDeadlines(response.data);
     } catch (error) {
       console.error('Error fetching deadlines:', error);
@@ -201,7 +201,7 @@ const CoordinatorWorkspaceDashboard = () => {
 
   const handleStatusUpdate = async () => {
     try {
-      await axios.put(`http://localhost:5000/api/grievances/${selectedGrievance.id}/status`, {
+      await api.put(`/api/grievances/${selectedGrievance.id}/status`, {
         status: newStatus,
         comment: statusComment,
         updated_by: user.id
@@ -221,7 +221,7 @@ const CoordinatorWorkspaceDashboard = () => {
 
   const handleSendMessage = async () => {
     try {
-      await axios.post(`http://localhost:5000/api/messages`, {
+      await api.post(`/api/messages`, {
         grievance_id: selectedGrievance.id,
         sender_id: user.id,
         receiver_id: selectedGrievance.student_id,

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
 import api from '../config/axios'
 import { Link as RouterLink } from 'react-router-dom';
 import {
@@ -43,14 +42,13 @@ export default function Dashboard() {
   const [recentNotifications, setRecentNotifications] = useState([]);  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showViz, setShowViz] = useState(false);
-  const [showDeadlines, setShowDeadlines] = useState(false);
-  const fetchDashboardData = useCallback(async () => {
+  const [showDeadlines, setShowDeadlines] = useState(false);  const fetchDashboardData = useCallback(async () => {
     try {
       // Fetch grievances
       const grievancesUrl = user.role === 'student'
-        ? `http://localhost:5000/api/grievances/student/${user.id}`
-        : 'http://localhost:5000/api/grievances';
-      const grievancesResponse = await axios.get(grievancesUrl);
+        ? `/api/grievances/student/${user.id}`
+        : '/api/grievances';
+      const grievancesResponse = await api.get(grievancesUrl);
       const grievances = grievancesResponse.data;
 
       // Calculate enhanced stats
@@ -74,19 +72,17 @@ export default function Dashboard() {
       });
 
       // Get recent grievances
-      setRecentGrievances(grievances.slice(0, 5));
-
-      // Fetch upcoming deadlines
+      setRecentGrievances(grievances.slice(0, 5));      // Fetch upcoming deadlines
       try {
-        const deadlinesResponse = await axios.get('http://localhost:5000/api/deadlines/upcoming');
+        const deadlinesResponse = await api.get('/api/deadlines/upcoming');
         setUpcomingDeadlines(deadlinesResponse.data.slice(0, 5));
       } catch (error) {
         console.error('Error fetching deadlines:', error);
       }
 
       // Fetch notifications
-      const notificationsResponse = await axios.get(
-        `http://localhost:5000/api/notifications/${user.id}`
+      const notificationsResponse = await api.get(
+        `/api/notifications/${user.id}`
       );
       setRecentNotifications(notificationsResponse.data.slice(0, 5));
     } catch (error) {

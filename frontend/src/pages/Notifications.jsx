@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import axios from 'axios'
+import api from '../config/axios'
 import {
   Container,
   Paper,
@@ -25,11 +25,10 @@ export default function Notifications() {
   useEffect(() => {
     fetchNotifications()
   }, [user])
-
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:5000/api/notifications/${user.id}`
+      const response = await api.get(
+        `/api/notifications/${user.id}`
       )
       setNotifications(response.data)
     } catch (error) {
@@ -38,11 +37,10 @@ export default function Notifications() {
       setLoading(false)
     }
   }
-
   const markAsRead = async (notificationId) => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/notifications/${notificationId}/read`
+      await api.put(
+        `/api/notifications/${notificationId}/read`
       )
       setNotifications(notifications.map(notification =>
         notification.id === notificationId

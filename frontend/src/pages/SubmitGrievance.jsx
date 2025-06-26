@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useFormik } from 'formik'
-import axios from 'axios'
+import api from '../config/axios'
 import { toast } from 'react-toastify'
 import {
   Container,
@@ -107,10 +107,8 @@ export default function SubmitGrievance() {
         if (file) {
           formData.append('attachment', file)
           console.log('📎 File attached:', file.name)
-        }
-
-        console.log('🚀 Making API call to submit grievance...')
-        const response = await axios.post('http://localhost:5000/api/grievances/submit', formData, {
+        }        console.log('🚀 Making API call to submit grievance...')
+        const response = await api.post('/api/grievances/submit', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }

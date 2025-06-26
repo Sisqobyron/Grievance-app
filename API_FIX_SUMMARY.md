@@ -1,5 +1,27 @@
 # 🛠️ API 404 Errors Fix Summary
 
+## 🚨 URGENT: Network Error Fix Needed
+
+**Current Issue**: Frontend still using hardcoded `localhost:5000` URLs causing "Network Error" in production.
+
+**Solution Implemented**: 
+- ✅ Created centralized API configuration (`frontend/src/config/api.js` and `frontend/src/config/axios.js`)
+- ✅ Updated `AuthContext.jsx` to use centralized API
+- ⚠️ **Still need to update other components**
+
+**Files requiring URL updates**:
+- `src/pages/Dashboard.jsx`
+- `src/pages/StaffDashboard.jsx` 
+- `src/pages/ViewGrievances.jsx`
+- `src/components/CoordinatorDashboard.jsx`
+- `src/components/CoordinatorWorkspaceDashboard.jsx`
+- `src/components/EscalationManagement.jsx`
+- And others using `axios.get('http://localhost:5000/...')`
+
+**Quick Fix**: Replace `axios.get('http://localhost:5000/api/...')` with `api.get('/api/...')` and add `import api from '../config/axios'`
+
+---
+
 ## ✅ COMPLETED FIXES
 
 ### 1. **Escalation API 404 Errors** - FIXED ✅

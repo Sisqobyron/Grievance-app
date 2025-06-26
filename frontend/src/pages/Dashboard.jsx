@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import api from '../config/axios'
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Container,

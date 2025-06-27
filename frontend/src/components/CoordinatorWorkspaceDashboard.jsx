@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
@@ -99,6 +100,16 @@ const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
   </motion.div>
 );
 
+// Add PropTypes for components
+StatCard.propTypes = {
+  title: () => null,
+  value: () => null,
+  icon: () => null,
+  color: () => null,
+  subtitle: () => null,
+  trend: () => null
+};
+
 const getStatusColor = (status) => {
   switch (status) {
     case 'Submitted':
@@ -149,53 +160,110 @@ const CoordinatorWorkspaceDashboard = () => {
   const [messageDialog, setMessageDialog] = useState(false);  const [newStatus, setNewStatus] = useState('');
   const [statusComment, setStatusComment] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [coordinator, setCoordinator] = useState(null);
+  const [isCoordinator, setIsCoordinator] = useState(false);
 
-  const fetchCoordinatorData = useCallback(async () => {
+  // First check if user is a coordinator
+  const checkCoordinatorStatus = useCallback(async () => {
     try {
-      // Get coordinator info and stats
-      const response = await api.get(`/api/coordinators/profile/${user.id}`);
-      const coordinatorData = response.data;
-      
-      setCoordinatorStats({
-        totalAssigned: coordinatorData.total_assigned || 0,
-        inProgress: coordinatorData.in_progress || 0,
-        resolved: coordinatorData.resolved || 0,
-        overdue: coordinatorData.overdue || 0,
-        avgResolutionTime: coordinatorData.avg_resolution_time || 0,
-        workloadCapacity: Math.round((coordinatorData.total_assigned / coordinatorData.max_workload) * 100)
-      });
+      const response = await api.get(`/api/coordinators/user/${user.id}`);
+      setCoordinator(response.data);
+      setIsCoordinator(true);
+      return response.data;
     } catch (error) {
-      console.error('Error fetching coordinator data:', error);
+      console.error('User is not a coordinator:', error);
+      setIsCoordinator(false);
+      setLoading(false);
+      return null;
     }
-  }, [user.id]);
-
-  const fetchAssignedGrievances = useCallback(async () => {
+  }, [user.id]);  const fetchAssignedGrievances = useCallback(async (coordinatorData) => {
+    if (!coordinatorData) return;
+    
     try {
-      const response = await api.get(`/api/coordinators/${user.id}/grievances`);
-      setAssignedGrievances(response.data);
+      // Use general grievances endpoint and filter by coordinator
+      const response = await api.get('/api/grievances');
+      const allGrievances = response.data;
+      // Filter grievances assigned to this coordinator using coordinator ID
+      const assignedGrievances = allGrievances.filter(g => g.assigned_to === coordinatorData.id);
+      setAssignedGrievances(assignedGrievances);
     } catch (error) {
       console.error('Error fetching assigned grievances:', error);
       toast.error('Failed to fetch assigned grievances');
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
-
-  const fetchRecentActivity = useCallback(async () => {
-    try {
-      const response = await api.get(`/api/coordinators/${user.id}/activity`);
-      setRecentActivity(response.data);
-    } catch (error) {
-      console.error('Error fetching recent activity:', error);
-    }
-  }, [user.id]);
+  }, []);
 
   const fetchUpcomingDeadlines = useCallback(async () => {
     try {
-      const response = await api.get(`/api/coordinators/${user.id}/deadlines`);
-      setUpcomingDeadlines(response.data);
+      // Use deadlines endpoint
+      const response = await api.get('/api/deadlines/upcoming');
+      setUpcomingDeadlines(response.data.slice(0, 5));
     } catch (error) {
       console.error('Error fetching deadlines:', error);
+      // Set empty array to prevent UI issues
+      setUpcomingDeadlines([]);
+    }
+  }, []);
+  const fetchCoordinatorData = useCallback(async (coordinatorData) => {
+    if (!coordinatorData) return;
+    
+    try {
+      // Get coordinator dashboard data using the correct coordinator ID
+      const response = await api.get(`/api/coordinators/${coordinatorData.id}/dashboard`);
+      const dashboardData = response.data;
+      
+      // Extract coordinator stats from the dashboard response
+      const grievances = dashboardData.grievances || [];
+      const total = grievances.length;
+      const inProgress = grievances.filter(g => g.status === 'In Progress').length;
+      const resolved = grievances.filter(g => g.status === 'Resolved').length;
+      const overdue = grievances.filter(g => {
+        if (g.deadline_date && g.status !== 'Resolved') {
+          return new Date(g.deadline_date) < new Date();
+        }
+        return false;
+      }).length;
+      
+      setCoordinatorStats({
+        totalAssigned: total,
+        inProgress: inProgress,
+        resolved: resolved,
+        overdue: overdue,
+        avgResolutionTime: dashboardData.deadlineStats?.avg_resolution_time || 0,
+        workloadCapacity: Math.round((total / (coordinatorData.max_concurrent_cases || 10)) * 100)
+      });
+      
+      // Set assigned grievances from dashboard data
+      setAssignedGrievances(grievances);
+      
+      // Set upcoming deadlines from dashboard data
+      setUpcomingDeadlines(dashboardData.upcomingDeadlines || []);
+      
+    } catch (error) {
+      console.error('Error fetching coordinator data:', error);
+      // Fallback to alternative endpoints if dashboard fails
+      fetchAssignedGrievances(coordinatorData);
+      fetchUpcomingDeadlines();
+    }
+  }, [fetchAssignedGrievances, fetchUpcomingDeadlines]);  const fetchRecentActivity = useCallback(async (coordinatorData) => {
+    try {
+      // Use the correct timeline endpoint for coordinator activity
+      const coordinatorId = coordinatorData?.id || user.id;
+      const response = await api.get(`/api/timeline/coordinator/${coordinatorId}`);
+      setRecentActivity(response.data);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      // Fallback to general recent activity if coordinator-specific fails
+      try {
+        const fallbackResponse = await api.get('/api/timeline/recent');
+        const recentActivity = fallbackResponse.data.slice(0, 10);
+        setRecentActivity(recentActivity);
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError);
+        // Set empty array to prevent UI issues
+        setRecentActivity([]);
+      }
     }
   }, [user.id]);
 
@@ -247,22 +315,30 @@ const CoordinatorWorkspaceDashboard = () => {
   const openMessageDialog = (grievance) => {
     setSelectedGrievance(grievance);
     setMessageDialog(true);
-  };
-
-  // useEffect to fetch data when component mounts
+  };  // useEffect to check coordinator status and fetch data when component mounts
   useEffect(() => {
-    fetchCoordinatorData();
-    fetchAssignedGrievances();
-    fetchRecentActivity();
-    fetchUpcomingDeadlines();
-  }, [fetchCoordinatorData, fetchAssignedGrievances, fetchRecentActivity, fetchUpcomingDeadlines]);
-
+    const initializeCoordinatorDashboard = async () => {
+      const coordinatorData = await checkCoordinatorStatus();
+      if (coordinatorData) {
+        await fetchCoordinatorData(coordinatorData);
+        fetchRecentActivity(coordinatorData);
+      }
+    };
+    
+    initializeCoordinatorDashboard();
+  }, [checkCoordinatorStatus, fetchCoordinatorData, fetchRecentActivity]);
   const TabPanel = ({ children, value, index }) => (
     <div hidden={value !== index}>
       {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
     </div>
   );
 
+  // Add PropTypes for TabPanel
+  TabPanel.propTypes = {
+    children: () => null,
+    value: () => null,
+    index: () => null
+  };
   if (loading) {
     return (
       <Box>
@@ -278,6 +354,39 @@ const CoordinatorWorkspaceDashboard = () => {
             </Grid>
           ))}
         </Grid>
+      </Box>
+    );
+  }
+
+  // Show message if user is not a coordinator
+  if (!isCoordinator) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Alert severity="info" sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}>
+          <Typography variant="h6" gutterBottom>
+            Access Restricted - Coordinator Role Required
+          </Typography>
+          <Typography variant="body1">
+            This workspace is only accessible to users with coordinator privileges. 
+            If you believe you should have access to this area, please contact your system administrator.
+          </Typography>
+        </Alert>
+        
+        <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+          Current user: {user.name} ({user.email})
+        </Typography>
+        <Typography variant="body2" color="textSecondary">
+          Role: {user.role}
+        </Typography>
+        
+        {user.role === 'staff' && (
+          <Alert severity="warning" sx={{ mt: 3, maxWidth: 600, mx: 'auto' }}>
+            <Typography variant="body2">
+              <strong>Note for Staff:</strong> You may need to be assigned as a coordinator for a specific department. 
+              Please check the Coordinator Panel to see if coordinator profiles need to be set up.
+            </Typography>
+          </Alert>
+        )}
       </Box>
     );
   }

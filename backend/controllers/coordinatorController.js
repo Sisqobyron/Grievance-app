@@ -30,6 +30,28 @@ const coordinatorController = {
     });
   },
 
+  // Get coordinator by user ID
+  getCoordinatorByUserId: (req, res) => {
+    const { userId } = req.params;
+    
+    coordinatorModel.getCoordinatorByUserId(userId, (err, coordinator) => {
+      if (err) {
+        return res.status(500).json({ 
+          message: 'Error retrieving coordinator', 
+          error: err 
+        });
+      }
+      
+      if (!coordinator) {
+        return res.status(404).json({ 
+          message: 'Coordinator not found for this user' 
+        });
+      }
+      
+      res.json(coordinator);
+    });
+  },
+
   // Get all coordinators
   getAllCoordinators: (req, res) => {
     coordinatorModel.getAllCoordinators((err, coordinators) => {

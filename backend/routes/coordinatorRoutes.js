@@ -7,6 +7,7 @@ router.post('/register', coordinatorController.registerCoordinator);
 router.post('/', coordinatorController.createCoordinator);  // Alias for register
 router.get('/', coordinatorController.getAllCoordinators);
 router.get('/assignments', coordinatorController.getAllAssignments);
+router.get('/user/:userId', coordinatorController.getCoordinatorByUserId); // Get coordinator by user ID
 router.get('/:coordinatorId/dashboard', coordinatorController.getCoordinatorDashboard);
 router.get('/:coordinatorId/workload', coordinatorController.getCoordinatorWorkload);
 router.put('/:coordinatorId/status', coordinatorController.updateCoordinatorStatus);

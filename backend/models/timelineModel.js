@@ -91,8 +91,7 @@ const timelineModel = {
         ...row,
         metadata: row.metadata ? JSON.parse(row.metadata) : null
       }));
-      
-      callback(null, activities);
+        callback(null, activities);
     });
   },
 
@@ -106,10 +105,8 @@ const timelineModel = {
         u.name as performer_name
       FROM grievance_timeline gt
       JOIN grievances g ON gt.grievance_id = g.id
-      JOIN grievance_assignments ga ON g.id = ga.grievance_id
       LEFT JOIN users u ON gt.performed_by = u.id
-      WHERE ga.coordinator_id = ? 
-        AND ga.is_active = 1
+      WHERE g.assigned_to = ? 
         AND gt.performed_at >= datetime('now', '-${days} days')
       ORDER BY gt.performed_at DESC
     `;

@@ -28,7 +28,6 @@ const deadlineModel = {
     
     db.all(sql, [grievanceId], callback);
   },
-
   // Get upcoming deadlines (next 7 days)
   getUpcomingDeadlines: (coordinatorId, callback) => {
     const sql = `
@@ -43,9 +42,7 @@ const deadlineModel = {
       JOIN grievances g ON gd.grievance_id = g.id
       JOIN students s ON g.student_id = s.user_id
       JOIN users u ON s.user_id = u.id
-      JOIN grievance_assignments ga ON g.id = ga.grievance_id
-      WHERE ga.coordinator_id = ? 
-        AND ga.is_active = 1
+      WHERE g.assigned_to = ? 
         AND gd.is_met = 0
         AND gd.deadline_date <= datetime('now', '+7 days')
       ORDER BY gd.deadline_date ASC
@@ -155,7 +152,6 @@ const deadlineModel = {
       });
     });
   },
-
   // Get deadline statistics for dashboard
   getDeadlineStats: (coordinatorId, callback) => {
     const sql = `
@@ -166,8 +162,7 @@ const deadlineModel = {
         COUNT(CASE WHEN gd.is_met = 1 THEN 1 END) as completed
       FROM grievance_deadlines gd
       JOIN grievances g ON gd.grievance_id = g.id
-      JOIN grievance_assignments ga ON g.id = ga.grievance_id
-      WHERE ga.coordinator_id = ? AND ga.is_active = 1
+      WHERE g.assigned_to = ?
     `;
       db.get(sql, [coordinatorId], callback);
   },

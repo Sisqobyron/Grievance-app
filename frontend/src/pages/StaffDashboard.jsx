@@ -71,6 +71,51 @@ const getStatusColor = (status) => {
   }
 }
 
+const getPriorityConfig = (priority) => {
+  switch (priority) {
+    case 'Urgent':
+      return { 
+        color: 'error', 
+        bgcolor: 'rgba(244, 67, 54, 0.1)', 
+        borderColor: '#f44336',
+        icon: '🚨',
+        weight: 4
+      }
+    case 'High':
+      return { 
+        color: 'warning', 
+        bgcolor: 'rgba(255, 152, 0, 0.1)', 
+        borderColor: '#ff9800',
+        icon: '⚡',
+        weight: 3
+      }
+    case 'Medium':
+      return { 
+        color: 'info', 
+        bgcolor: 'rgba(33, 150, 243, 0.1)', 
+        borderColor: '#2196f3',
+        icon: '📋',
+        weight: 2
+      }
+    case 'Low':
+      return { 
+        color: 'success', 
+        bgcolor: 'rgba(76, 175, 80, 0.1)', 
+        borderColor: '#4caf50',
+        icon: '📝',
+        weight: 1
+      }
+    default:
+      return { 
+        color: 'default', 
+        bgcolor: 'rgba(158, 158, 158, 0.1)', 
+        borderColor: '#9e9e9e',
+        icon: '📄',
+        weight: 0
+      }
+  }
+}
+
 const StatCard = ({ title, value, color, icon, isLoading }) => (
   <motion.div variants={itemAnimation}>
     <Card className="glass-effect hover-card">
@@ -122,14 +167,28 @@ export default function StaffDashboard() {
   const [selectedGrievance, setSelectedGrievance] = useState(null)
   const [viewerOpen, setViewerOpen] = useState(false)
   const [updatingId, setUpdatingId] = useState(null)
-
   useEffect(() => {
     fetchGrievances()
   }, [])
+  
   const fetchGrievances = async () => {
     try {
       const response = await api.get('/api/grievances')
-      setGrievances(response.data)
+      
+      // Sort grievances by priority (Urgent -> High -> Medium -> Low)
+      const sortedGrievances = response.data.sort((a, b) => {
+        const priorityOrder = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 }
+        const aPriority = priorityOrder[a.priority_level] || 0
+        const bPriority = priorityOrder[b.priority_level] || 0
+        
+        // Sort by priority first (highest first), then by submission date (newest first)
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority
+        }
+        return new Date(b.submission_date) - new Date(a.submission_date)
+      })
+      
+      setGrievances(sortedGrievances)
       
       // Calculate stats
       const total = response.data.length
@@ -280,108 +339,365 @@ export default function StaffDashboard() {
               />
             </Grid>
           </Grid>          <motion.div variants={itemAnimation}>
-            <Paper sx={{ p: 3 }} className="glass-effect">
-              <Typography variant="h6" gutterBottom>
-                All Grievances
-              </Typography>
+            <Paper 
+              sx={{ 
+                p: 0,
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: 4,
+                border: '1px solid rgba(255,255,255,0.2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                overflow: 'hidden'
+              }} 
+              className="glass-effect"
+            >
+              <Box sx={{ 
+                p: 3, 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                <Typography variant="h5" fontWeight={700} sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 2,
+                  textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  📋 All Grievances
+                  <Chip 
+                    label={`${grievances.length} Total`}
+                    size="small"
+                    sx={{ 
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontWeight: 600
+                    }}
+                  />
+                </Typography>
+                <Typography variant="body2" sx={{ 
+                  opacity: 0.9, 
+                  mt: 1,
+                  fontWeight: 400
+                }}>
+                  Sorted by priority • Urgent cases shown first
+                </Typography>
+              </Box>
               
-              <TableContainer>
-                <Table>
+              <TableContainer sx={{ maxHeight: '70vh' }}>
+                <Table stickyHeader>
                   <TableHead>
                     <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Student</TableCell>
-                      <TableCell>Department</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell>Description</TableCell>
-                      <TableCell>Priority</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Submitted On</TableCell>
-                      <TableCell>Attachment</TableCell>
-                      <TableCell>Actions</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        ID
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Student
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Department
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Type
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Description
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        🔥 Priority
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Status
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Submitted On
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Attachment
+                      </TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 700, 
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderBottom: '2px solid #667eea'
+                      }}>
+                        Actions
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {grievances.map((grievance) => (
-                      <TableRow
-                        key={grievance.id}
-                        component={motion.tr}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <TableCell>{grievance.id}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {grievance.student_name}
-                            <Typography variant="caption" display="block" color="textSecondary">
-                              {grievance.program} - Level {grievance.level}
-                            </Typography>
+                  </TableHead>                  <TableBody>
+                    {grievances.map((grievance, index) => {
+                      const priorityConfig = getPriorityConfig(grievance.priority_level)
+                      return (
+                        <TableRow
+                          key={grievance.id}
+                          component={motion.tr}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: 'rgba(102, 126, 234, 0.05)',
+                              transform: 'scale(1.01)',
+                              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                            },
+                            borderLeft: `4px solid ${priorityConfig.borderColor}`,
+                            transition: 'all 0.2s ease-in-out',
+                            cursor: 'pointer'
+                          }}
+                        >
+                        <TableCell sx={{ fontWeight: 600, color: '#667eea' }}>
+                          #{grievance.id}
+                        </TableCell>                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '1rem'
+                            }}>
+                              {grievance.student_name?.charAt(0) || 'S'}
+                            </Box>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                                {grievance.student_name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ 
+                                color: 'text.secondary',
+                                display: 'block',
+                                fontSize: '0.7rem'
+                              }}>
+                                {grievance.program} - Level {grievance.level}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>                        <TableCell sx={{ fontWeight: 500 }}>{grievance.department}</TableCell>
+                        <TableCell sx={{ fontWeight: 500 }}>{grievance.type}</TableCell>
+                        <TableCell sx={{ maxWidth: 200 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              lineHeight: 1.4,
+                              color: '#555'
+                            }}
+                            title={grievance.description}
+                          >
+                            {grievance.description}
                           </Typography>
-                        </TableCell>
-                        <TableCell>{grievance.department}</TableCell>
-                        <TableCell>{grievance.type}</TableCell>
-                        <TableCell>{grievance.description}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={grievance.priority_level}
-                            color={grievance.priority_level === 'Urgent' ? 'error' : 'default'}
-                          />
-                        </TableCell>
-                        <TableCell>
+                        </TableCell><TableCell>
+                          {(() => {
+                            const priorityConfig = getPriorityConfig(grievance.priority_level)
+                            return (
+                              <Chip
+                                icon={<span style={{ fontSize: '14px' }}>{priorityConfig.icon}</span>}
+                                label={grievance.priority_level}
+                                color={priorityConfig.color}
+                                variant="outlined"
+                                sx={{
+                                  backgroundColor: priorityConfig.bgcolor,
+                                  borderColor: priorityConfig.borderColor,
+                                  fontWeight: 600,
+                                  fontSize: '0.75rem',
+                                  '& .MuiChip-icon': {
+                                    marginLeft: 1
+                                  }
+                                }}
+                              />
+                            )
+                          })()}
+                        </TableCell>                        <TableCell>
                           <Chip
                             label={grievance.status}
                             color={getStatusColor(grievance.status)}
+                            size="small"
+                            sx={{
+                              fontWeight: 600,
+                              minWidth: 80,
+                              '&.MuiChip-colorSuccess': {
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                color: '#2e7d32',
+                                border: '1px solid #4caf50'
+                              },
+                              '&.MuiChip-colorWarning': {
+                                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                color: '#ef6c00',
+                                border: '1px solid #ff9800'
+                              },
+                              '&.MuiChip-colorError': {
+                                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                color: '#c62828',
+                                border: '1px solid #f44336'
+                              },
+                              '&.MuiChip-colorInfo': {
+                                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                color: '#1565c0',
+                                border: '1px solid #2196f3'
+                              }
+                            }}
                           />
-                        </TableCell>
-                        <TableCell>
-                          {new Date(grievance.submission_date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          {grievance.file_path && (
-                            <Box>
+                        </TableCell>                        <TableCell>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                              {new Date(grievance.submission_date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                              {new Date(grievance.submission_date).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </Typography>
+                          </Box>
+                        </TableCell>                        <TableCell>
+                          {grievance.file_path ? (
+                            <Box sx={{ display: 'flex', gap: 1 }}>
                               <IconButton
                                 onClick={() => openAttachment(grievance)}
                                 size="small"
+                                sx={{
+                                  backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                  color: '#1976d2',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                                    transform: 'scale(1.1)'
+                                  },
+                                  transition: 'all 0.2s ease'
+                                }}
                               >
-                                <Visibility />
+                                <Visibility fontSize="small" />
                               </IconButton>
                               <IconButton
                                 onClick={() => downloadAttachment(grievance.file_path)}
                                 size="small"
+                                sx={{
+                                  backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                  color: '#388e3c',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                                    transform: 'scale(1.1)'
+                                  },
+                                  transition: 'all 0.2s ease'
+                                }}
                               >
-                                <Download />
+                                <Download fontSize="small" />
                               </IconButton>
                             </Box>
+                          ) : (
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                              No attachment
+                            </Typography>
                           )}
                         </TableCell>
                         <TableCell>
-                          <FormControl size="small" fullWidth>
-                            <Select
+                          <FormControl size="small" fullWidth>                            <Select
                               value=""
                               displayEmpty
                               disabled={updatingId === grievance.id}
                               onChange={(e) => handleStatusUpdate(grievance.id, e.target.value)}
+                              sx={{
+                                backgroundColor: 'rgba(102, 126, 234, 0.05)',
+                                borderRadius: 2,
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: 'rgba(102, 126, 234, 0.3)'
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#667eea'
+                                }
+                              }}
                             >
                               <MenuItem value="" disabled>
-                                Update Status
+                                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                                  Update Status
+                                </Typography>
                               </MenuItem>
-                              <MenuItem value="In Progress">Mark In Progress</MenuItem>
-                              <MenuItem value="Resolved">Mark Resolved</MenuItem>
-                              <MenuItem value="Rejected">Reject</MenuItem>
+                              <MenuItem value="In Progress">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  ⚡ Mark In Progress
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="Resolved">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  ✅ Mark Resolved
+                                </Box>
+                              </MenuItem>
+                              <MenuItem value="Rejected">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  ❌ Reject
+                                </Box>
+                              </MenuItem>
                             </Select>
-                          </FormControl>
-                        </TableCell>
+                          </FormControl>                        </TableCell>
                       </TableRow>
-                    ))}
+                      )
+                    })}
                   </TableBody>
                 </Table>
-              </TableContainer>
-
-              {grievances.length === 0 && (
-                <Typography sx={{ mt: 2, textAlign: 'center' }}>
-                  No grievances found.
-                </Typography>
+              </TableContainer>              {grievances.length === 0 && (
+                <Box sx={{ 
+                  py: 8, 
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)'
+                }}>
+                  <Typography variant="h6" sx={{ 
+                    color: 'text.secondary', 
+                    mb: 2,
+                    fontSize: '3rem'
+                  }}>
+                    📋
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#667eea', mb: 1 }}>
+                    No grievances found
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    All caught up! No grievances to review at the moment.
+                  </Typography>
+                </Box>
               )}
             </Paper>
           </motion.div>

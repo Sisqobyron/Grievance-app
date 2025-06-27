@@ -103,7 +103,6 @@ const coordinatorModel = {
       });
     });
   },
-
   // Get grievances assigned to coordinator
   getCoordinatorGrievances: (coordinatorId, callback) => {
     const sql = `
@@ -111,13 +110,11 @@ const coordinatorModel = {
         g.*,
         u.name as student_name,
         u.email as student_email,
-        ga.assigned_at,
-        ga.notes as assignment_notes
+        g.submission_date as assigned_at
       FROM grievances g
-      JOIN grievance_assignments ga ON g.id = ga.grievance_id
       JOIN students s ON g.student_id = s.user_id
       JOIN users u ON s.user_id = u.id
-      WHERE ga.coordinator_id = ? AND ga.is_active = 1
+      WHERE g.assigned_to = ?
       ORDER BY g.submission_date DESC
     `;
     

@@ -36,8 +36,11 @@ import {
   List as ListIcon, 
   Assessment, 
   CheckCircle, 
-  Warning
+  Warning,
+  Forward as ForwardIcon,
+  Info as InfoIcon
 } from '@mui/icons-material'
+import ForwardGrievanceModal from '../components/ForwardGrievanceModal'
 
 const containerAnimation = {
   hidden: { opacity: 0, y: 20 },
@@ -167,11 +170,12 @@ export default function StaffDashboard() {
   const [selectedGrievance, setSelectedGrievance] = useState(null)
   const [viewerOpen, setViewerOpen] = useState(false)
   const [updatingId, setUpdatingId] = useState(null)
-  const [upcomingDeadlines, setUpcomingDeadlines] = useState([])
-  const [deadlinesLoading, setDeadlinesLoading] = useState(true)
+  const [forwardModalOpen, setForwardModalOpen] = useState(false)
+  const [grievanceToForward, setGrievanceToForward] = useState(null)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
+  const [selectedGrievanceDetails, setSelectedGrievanceDetails] = useState(null)
   useEffect(() => {
     fetchGrievances()
-    fetchUpcomingDeadlines()
   }, [])
   
   const fetchGrievances = async () => {
@@ -211,21 +215,6 @@ export default function StaffDashboard() {
       setLoading(false)
     }
   }
-  
-  const fetchUpcomingDeadlines = async () => {
-    try {
-      setDeadlinesLoading(true)
-      // Fetch deadlines for staff department grievances
-      const response = await api.get('/api/deadlines/upcoming')
-      setUpcomingDeadlines(response.data.slice(0, 10)) // Show top 10 upcoming deadlines
-    } catch (error) {
-      console.error('Failed to fetch upcoming deadlines:', error)
-      toast.error('Failed to fetch upcoming deadlines')
-    } finally {
-      setDeadlinesLoading(false)
-    }
-  }
-  
   const handleStatusUpdate = async (grievanceId, newStatus) => {
     setUpdatingId(grievanceId)
     try {
@@ -357,168 +346,7 @@ export default function StaffDashboard() {
                 icon={<Warning sx={{ color: theme.palette.error.main }} />}
               />
             </Grid>
-          </Grid>
-
-          {/* Upcoming Deadlines Section */}
-          <motion.div variants={itemAnimation}>
-            <Paper 
-              sx={{ 
-                p: 0,
-                mb: 4,
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: 4,
-                border: '1px solid rgba(255,255,255,0.2)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                overflow: 'hidden'
-              }} 
-              className="glass-effect"
-            >
-              <Box sx={{ 
-                p: 3, 
-                background: 'linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%)',
-                color: 'white'
-              }}>
-                <Typography variant="h5" fontWeight={700} sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 2,
-                  textShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }}>
-                  ⏰ Upcoming Deadlines
-                  <Chip 
-                    label={`${upcomingDeadlines.length} Active`}
-                    size="small"
-                    sx={{ 
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      color: 'white',
-                      fontWeight: 600
-                    }}
-                  />
-                </Typography>
-                <Typography variant="body2" sx={{ 
-                  opacity: 0.9, 
-                  mt: 1,
-                  fontWeight: 400
-                }}>
-                  Monitor approaching deadlines for timely grievance resolution
-                </Typography>
-              </Box>
-              
-              {deadlinesLoading ? (
-                <Box sx={{ p: 3 }}>
-                  <Grid container spacing={2}>
-                    {[1, 2, 3, 4].map((item) => (
-                      <Grid item xs={12} sm={6} md={3} key={item}>
-                        <Card sx={{ p: 2 }}>
-                          <Skeleton width="100%" height={20} sx={{ mb: 1 }} />
-                          <Skeleton width="60%" height={16} sx={{ mb: 1 }} />
-                          <Skeleton width="40%" height={24} />
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Box>
-              ) : upcomingDeadlines.length === 0 ? (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                  <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                    🎉 No Upcoming Deadlines
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    All grievances are on track or resolved
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ p: 3 }}>
-                  <Grid container spacing={2}>
-                    {upcomingDeadlines.map((deadline) => {
-                      const daysLeft = Math.ceil((new Date(deadline.deadline_date) - new Date()) / (1000 * 60 * 60 * 24));
-                      const isOverdue = daysLeft < 0;
-                      const isUrgent = daysLeft <= 2 && daysLeft >= 0;
-                      const isWarning = daysLeft <= 5 && daysLeft > 2;
-                      
-                      return (
-                        <Grid item xs={12} sm={6} md={3} key={deadline.id}>
-                          <Card 
-                            sx={{ 
-                              p: 2,
-                              height: '100%',
-                              background: isOverdue 
-                                ? 'linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%)'
-                                : isUrgent 
-                                  ? 'linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 152, 0, 0.05) 100%)'
-                                  : isWarning
-                                    ? 'linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%)'
-                                    : 'background.paper',
-                              border: isOverdue 
-                                ? '2px solid rgba(244, 67, 54, 0.3)'
-                                : isUrgent 
-                                  ? '2px solid rgba(255, 152, 0, 0.3)'
-                                  : '1px solid rgba(0, 0, 0, 0.1)',
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                transform: 'translateY(-4px)',
-                                boxShadow: isOverdue 
-                                  ? '0 8px 25px rgba(244, 67, 54, 0.2)'
-                                  : isUrgent 
-                                    ? '0 8px 25px rgba(255, 152, 0, 0.2)'
-                                    : '0 8px 25px rgba(0, 0, 0, 0.1)'
-                              }
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                                Grievance #{deadline.grievance_id}
-                              </Typography>
-                              <Box sx={{ fontSize: '1.2rem' }}>
-                                {isOverdue ? '🚨' : isUrgent ? '⚡' : isWarning ? '⚠️' : '⏰'}
-                              </Box>
-                            </Box>
-                            
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                              Due: {new Date(deadline.deadline_date).toLocaleDateString()}
-                            </Typography>
-                            
-                            <Chip 
-                              label={
-                                isOverdue 
-                                  ? `OVERDUE (${Math.abs(daysLeft)} days)` 
-                                  : isUrgent 
-                                    ? `${daysLeft} day${daysLeft > 1 ? 's' : ''} left` 
-                                    : `${daysLeft} days left`
-                              }
-                              size="small"
-                              color={isOverdue ? 'error' : isUrgent ? 'warning' : isWarning ? 'warning' : 'success'}
-                              sx={{ 
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                                '& .MuiChip-label': {
-                                  px: 1.5
-                                }
-                              }}
-                            />
-                            
-                            {deadline.grievance_type && (
-                              <Typography variant="caption" sx={{ 
-                                display: 'block',
-                                mt: 1,
-                                opacity: 0.7,
-                                fontWeight: 500
-                              }}>
-                                Type: {deadline.grievance_type}
-                              </Typography>
-                            )}
-                          </Card>
-                        </Grid>
-                      );
-                    })}
-                  </Grid>
-                </Box>
-              )}
-            </Paper>
-          </motion.div>
-
-          <motion.div variants={itemAnimation}>
+          </Grid>          <motion.div variants={itemAnimation}>
             <Paper 
               sx={{ 
                 p: 0,
@@ -815,44 +643,98 @@ export default function StaffDashboard() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <FormControl size="small" fullWidth>                            <Select
-                              value=""
-                              displayEmpty
-                              disabled={updatingId === grievance.id}
-                              onChange={(e) => handleStatusUpdate(grievance.id, e.target.value)}
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<InfoIcon />}
+                              onClick={() => {
+                                setSelectedGrievanceDetails(grievance)
+                                setDetailsModalOpen(true)
+                              }}
                               sx={{
-                                backgroundColor: 'rgba(102, 126, 234, 0.05)',
-                                borderRadius: 2,
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: 'rgba(102, 126, 234, 0.3)'
+                                textTransform: 'none',
+                                borderColor: 'rgba(102, 126, 234, 0.3)',
+                                color: '#667eea',
+                                fontSize: '0.75rem',
+                                padding: '4px 8px',
+                                '&:hover': {
+                                  borderColor: '#667eea',
+                                  backgroundColor: 'rgba(102, 126, 234, 0.05)',
+                                  transform: 'translateY(-1px)'
                                 },
-                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                  borderColor: '#667eea'
-                                }
+                                transition: 'all 0.2s ease'
                               }}
                             >
-                              <MenuItem value="" disabled>
-                                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-                                  Update Status
-                                </Typography>
-                              </MenuItem>
-                              <MenuItem value="In Progress">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  ⚡ Mark In Progress
-                                </Box>
-                              </MenuItem>
-                              <MenuItem value="Resolved">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  ✅ Mark Resolved
-                                </Box>
-                              </MenuItem>
-                              <MenuItem value="Rejected">
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  ❌ Reject
-                                </Box>
-                              </MenuItem>
-                            </Select>
-                          </FormControl>                        </TableCell>
+                              Details
+                            </Button>
+                            
+                            <FormControl size="small" fullWidth>
+                              <Select
+                                value=""
+                                displayEmpty
+                                disabled={updatingId === grievance.id}
+                                onChange={(e) => handleStatusUpdate(grievance.id, e.target.value)}
+                                sx={{
+                                  backgroundColor: 'rgba(102, 126, 234, 0.05)',
+                                  borderRadius: 2,
+                                  '& .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(102, 126, 234, 0.3)'
+                                  },
+                                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: '#667eea'
+                                  }
+                                }}
+                              >
+                                <MenuItem value="" disabled>
+                                  <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                                    Update Status
+                                  </Typography>
+                                </MenuItem>
+                                <MenuItem value="In Progress">
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    ⚡ Mark In Progress
+                                  </Box>
+                                </MenuItem>
+                                <MenuItem value="Resolved">
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    ✅ Mark Resolved
+                                  </Box>
+                                </MenuItem>
+                                <MenuItem value="Rejected">
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    ❌ Reject
+                                  </Box>
+                                </MenuItem>
+                              </Select>
+                            </FormControl>
+                            
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<ForwardIcon />}
+                              onClick={() => {
+                                setGrievanceToForward(grievance)
+                                setForwardModalOpen(true)
+                              }}
+                              sx={{
+                                textTransform: 'none',
+                                borderColor: 'rgba(76, 195, 247, 0.3)',
+                                color: '#4fc3f7',
+                                fontSize: '0.75rem',
+                                padding: '4px 8px',
+                                '&:hover': {
+                                  borderColor: '#4fc3f7',
+                                  backgroundColor: 'rgba(76, 195, 247, 0.05)',
+                                  transform: 'translateY(-1px)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              Forward
+                            </Button>
+                          </Box>
+                        </TableCell>
                       </TableRow>
                       )
                     })}
@@ -933,6 +815,252 @@ export default function StaffDashboard() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Grievance Details Modal */}
+      <Dialog
+        open={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false)
+          setSelectedGrievanceDetails(null)
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: 'white', // Fixed solid background
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box 
+                sx={{ 
+                  p: 1.5, 
+                  borderRadius: 2, 
+                  backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                  color: '#667eea'
+                }}
+              >
+                <InfoIcon />
+              </Box>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Grievance Details
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Complete information about grievance #{selectedGrievanceDetails?.id}
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton 
+              onClick={() => setDetailsModalOpen(false)}
+              sx={{ color: 'text.secondary' }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: 0 }}>
+          {selectedGrievanceDetails && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Basic Information */}
+              <Paper sx={{ p: 3, borderRadius: 2, backgroundColor: 'rgba(102, 126, 234, 0.05)' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#667eea' }}>
+                  📋 Basic Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Grievance ID</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>#{selectedGrievanceDetails.id}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Type</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{selectedGrievanceDetails.type}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Status</Typography>
+                    <Chip 
+                      label={selectedGrievanceDetails.status} 
+                      size="small" 
+                      color={getStatusColor(selectedGrievanceDetails.status)}
+                      sx={{ mt: 0.5 }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Priority</Typography>
+                    <Chip 
+                      label={selectedGrievanceDetails.priority_level} 
+                      size="small" 
+                      color={getPriorityConfig(selectedGrievanceDetails.priority_level).color}
+                      sx={{ mt: 0.5 }}
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Student Information */}
+              <Paper sx={{ p: 3, borderRadius: 2, backgroundColor: 'rgba(76, 175, 80, 0.05)' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#4caf50' }}>
+                  👤 Student Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Name</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{selectedGrievanceDetails.student_name}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Department</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{selectedGrievanceDetails.department}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Program</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>{selectedGrievanceDetails.program}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Level</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>Level {selectedGrievanceDetails.level}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Grievance Details */}
+              <Paper sx={{ p: 3, borderRadius: 2, backgroundColor: 'rgba(255, 152, 0, 0.05)' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#ff9800' }}>
+                  📄 Description
+                </Typography>
+                <Typography variant="body1" sx={{ 
+                  lineHeight: 1.6,
+                  p: 2,
+                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                  borderRadius: 1,
+                  border: '1px solid rgba(0, 0, 0, 0.05)'
+                }}>
+                  {selectedGrievanceDetails.description}
+                </Typography>
+              </Paper>
+
+              {/* Timeline Information */}
+              <Paper sx={{ p: 3, borderRadius: 2, backgroundColor: 'rgba(156, 39, 176, 0.05)' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#9c27b0' }}>
+                  📅 Timeline
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Submitted On</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {new Date(selectedGrievanceDetails.submission_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Typography>
+                  </Grid>
+                  {selectedGrievanceDetails.resolution_date && (
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">Resolved On</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {new Date(selectedGrievanceDetails.resolution_date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </Paper>
+
+              {/* Attachment Information */}
+              {selectedGrievanceDetails.file_path && (
+                <Paper sx={{ p: 3, borderRadius: 2, backgroundColor: 'rgba(33, 150, 243, 0.05)' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#2196f3' }}>
+                    📎 Attachment
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <IconButton
+                      onClick={() => openAttachment(selectedGrievanceDetails)}
+                      sx={{
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        color: '#2196f3',
+                        '&:hover': {
+                          backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                        }
+                      }}
+                    >
+                      <Visibility />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => downloadAttachment(selectedGrievanceDetails.file_path)}
+                      sx={{
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        color: '#4caf50',
+                        '&:hover': {
+                          backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        }
+                      }}
+                    >
+                      <Download />
+                    </IconButton>
+                    <Typography variant="body2" color="text.secondary">
+                      Click to view or download attachment
+                    </Typography>
+                  </Box>
+                </Paper>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, pt: 1, gap: 1 }}>
+          <Button 
+            onClick={() => setDetailsModalOpen(false)}
+            sx={{ textTransform: 'none' }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<ForwardIcon />}
+            onClick={() => {
+              setDetailsModalOpen(false)
+              setGrievanceToForward(selectedGrievanceDetails)
+              setForwardModalOpen(true)
+            }}
+            sx={{
+              textTransform: 'none',
+              background: 'linear-gradient(135deg, #4fc3f7, #29b6f6)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #29b6f6, #0288d1)',
+              }
+            }}
+          >
+            Forward to Lecturer/Department
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Forward Grievance Modal */}
+      <ForwardGrievanceModal
+        open={forwardModalOpen}
+        onClose={() => {
+          setForwardModalOpen(false)
+          setGrievanceToForward(null)
+        }}
+        grievance={grievanceToForward}
+        onSuccess={() => {
+          // Refresh grievances after successful forward
+          fetchGrievances()
+          toast.success('Grievance forwarded successfully!')
+        }}
+      />
     </Container>
   )
 }

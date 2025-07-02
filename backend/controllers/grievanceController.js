@@ -240,3 +240,300 @@ exports.getAllGrievances = (req, res) => {
     res.json(grievances);
   });
 };
+
+// Get grievances by department (for staff)
+exports.getGrievancesByDepartment = (req, res) => {
+  const staffUserId = req.user.id; // Assuming user ID is available from auth middleware
+  
+  // First, get the staff member's department
+  const staffModel = require('../models/staffModel');
+  staffModel.getStaffByUserId(staffUserId, (err, staff) => {
+    if (err) return res.status(500).json({ message: 'Error retrieving staff information', error: err });
+    if (!staff) return res.status(404).json({ message: 'Staff member not found' });
+    
+    // Get grievances for this department
+    grievanceModel.getGrievancesByDepartment(staff.department, (err, grievances) => {
+      if (err) return res.status(500).json({ message: 'Error retrieving grievances', error: err });
+      res.json(grievances);
+    });
+  });
+};
+
+exports.getGrievanceStats = (req, res) => {
+  // Get all grievances to calculate statistics
+  grievanceModel.getAllGrievances((err, grievances) => {
+    if (err) return res.status(500).json({ message: 'Error retrieving grievance statistics', error: err });
+    
+    // Calculate various statistics
+    const total = grievances.length;
+    const resolved = grievances.filter(g => g.status === 'Resolved').length;
+    const pending = grievances.filter(g => g.status === 'Pending' || g.status === 'In Progress').length;
+    const rejected = grievances.filter(g => g.status === 'Rejected').length;
+    
+    // Priority distribution
+    const priorityStats = {
+      Low: grievances.filter(g => g.priority_level === 'Low').length,
+      Medium: grievances.filter(g => g.priority_level === 'Medium').length,
+      High: grievances.filter(g => g.priority_level === 'High').length,
+      Urgent: grievances.filter(g => g.priority_level === 'Urgent').length
+    };
+    
+    // Category distribution
+    const categoryStats = {};
+    grievances.forEach(g => {
+      categoryStats[g.type] = (categoryStats[g.type] || 0) + 1;
+    });
+    
+    // Monthly trends (last 12 months)
+    const monthlyStats = {};
+    const currentDate = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
+      monthlyStats[monthKey] = 0;
+    }
+    
+    grievances.forEach(g => {
+      const monthKey = g.submission_date.slice(0, 7);
+      if (monthlyStats.hasOwnProperty(monthKey)) {
+        monthlyStats[monthKey]++;
+      }
+    });
+    
+    // Resolution time analysis (for resolved grievances)
+    const resolvedGrievances = grievances.filter(g => g.status === 'Resolved');
+    let avgResolutionTime = 0;
+    if (resolvedGrievances.length > 0) {
+      const totalResolutionTime = resolvedGrievances.reduce((sum, g) => {
+        if (g.resolution_date) {
+          const submissionDate = new Date(g.submission_date);
+          const resolutionDate = new Date(g.resolution_date);
+          const diffDays = Math.ceil((resolutionDate - submissionDate) / (1000 * 60 * 60 * 24));
+          return sum + diffDays;
+        }
+        return sum;
+      }, 0);
+      avgResolutionTime = Math.round(totalResolutionTime / resolvedGrievances.length);
+    }
+    
+    const stats = {
+      overview: {
+        total,
+        resolved,
+        pending,
+        rejected,
+        resolutionRate: total > 0 ? Math.round((resolved / total) * 100) : 0,
+        avgResolutionTime
+      },
+      priorities: priorityStats,
+      categories: categoryStats,
+      monthly: monthlyStats,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    res.json(stats);
+  });
+};
+
+// Forward grievance to lecturer/department
+exports.forwardGrievance = async (req, res) => {
+  try {
+    const { 
+      grievanceId, 
+      recipientEmail, 
+      recipientName, 
+      subject, 
+      customMessage, 
+      priority = 'normal' 
+    } = req.body;
+    
+    const staffId = req.user.id;
+    
+    // Validate required fields
+    if (!grievanceId || !recipientEmail || !recipientName || !customMessage) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: grievanceId, recipientEmail, recipientName, or customMessage' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recipientEmail)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+    
+    // Get grievance details
+    grievanceModel.getGrievanceById(grievanceId, async (err, grievance) => {
+      if (err) {
+        console.error('Error fetching grievance:', err);
+        return res.status(500).json({ message: 'Error fetching grievance details' });
+      }
+      
+      if (!grievance) {
+        return res.status(404).json({ message: 'Grievance not found' });
+      }        // Get student details
+        userModel.findUserById(grievance.student_id, async (userErr, student) => {
+          if (userErr) {
+            console.error('Error fetching student:', userErr);
+            return res.status(500).json({ message: 'Error fetching student details' });
+          }
+          
+          // Get staff details
+          userModel.findUserById(staffId, async (staffErr, staff) => {
+          if (staffErr) {
+            console.error('Error fetching staff:', staffErr);
+            return res.status(500).json({ message: 'Error fetching staff details' });
+          }
+          
+          // Prepare email content
+          const emailContent = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+              <div style="background: linear-gradient(135deg, #4fc3f7, #29b6f6); padding: 20px; border-radius: 10px 10px 0 0; color: white; text-align: center;">
+                <h1 style="margin: 0; font-size: 24px;">🎓 Student Grievance Management System</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">Grievance Forwarded for Resolution</p>
+              </div>
+              
+              <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                  <h3 style="color: #856404; margin: 0 0 10px 0;">⚠️ Priority: ${priority.toUpperCase()}</h3>
+                  <p style="color: #856404; margin: 0; font-size: 14px;">This grievance has been forwarded to you for resolution.</p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <h3 style="color: #333; border-bottom: 2px solid #4fc3f7; padding-bottom: 10px;">📋 Grievance Details</h3>
+                  <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr style="background: #f8f9fa;">
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold; width: 30%;">Grievance ID</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">#${grievance.id}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Type</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">${grievance.type}</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Subcategory</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">${grievance.subcategory || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Priority</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">
+                        <span style="background: ${grievance.priority_level === 'High' || grievance.priority_level === 'Urgent' ? '#ff4444' : grievance.priority_level === 'Medium' ? '#ff9800' : '#4caf50'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${grievance.priority_level}</span>
+                      </td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Status</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">${grievance.status}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Submitted On</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">${new Date(grievance.submission_date).toLocaleDateString()}</td>
+                    </tr>
+                  </table>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <h3 style="color: #333; border-bottom: 2px solid #4fc3f7; padding-bottom: 10px;">👤 Student Information</h3>
+                  <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr style="background: #f8f9fa;">
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold; width: 30%;">Name</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">${student.name}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Email</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">${student.email}</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                      <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Department</td>
+                      <td style="padding: 10px; border: 1px solid #dee2e6;">${student.department || 'N/A'}</td>
+                    </tr>
+                  </table>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <h3 style="color: #333; border-bottom: 2px solid #4fc3f7; padding-bottom: 10px;">📄 Grievance Description</h3>
+                  <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #4fc3f7; margin-top: 15px;">
+                    <p style="margin: 0; line-height: 1.6; color: #333;">${grievance.description}</p>
+                  </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                  <h3 style="color: #333; border-bottom: 2px solid #4fc3f7; padding-bottom: 10px;">💬 Message from Staff</h3>
+                  <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin-top: 15px;">
+                    <p style="margin: 0; line-height: 1.6; color: #333;">${customMessage}</p>
+                    <p style="margin: 15px 0 0 0; font-size: 14px; color: #666;">
+                      <strong>Forwarded by:</strong> ${staff.name} (${staff.email})
+                    </p>
+                  </div>
+                </div>
+                
+                <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="color: #155724; margin: 0 0 15px 0;">📞 Next Steps</h3>
+                  <ul style="color: #155724; margin: 0; padding-left: 20px;">
+                    <li>Please review the grievance details above</li>
+                    <li>Take appropriate action to resolve the issue</li>
+                    <li>Contact the student directly if needed: ${student.email}</li>
+                    <li>Update the staff member on the resolution: ${staff.email}</li>
+                    <li>Document any actions taken for future reference</li>
+                  </ul>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                  <p style="color: #666; font-size: 14px; margin: 0;">
+                    This email was automatically generated by the Student Grievance Management System<br>
+                    For support, please contact the administration office.
+                  </p>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          // Send email using the notification system
+          try {
+            await notifier.sendEmail({
+              to: recipientEmail,
+              subject: subject || `Grievance #${grievance.id} - ${grievance.type} - Action Required`,
+              html: emailContent
+            });
+            
+            // Log the forwarding action in timeline
+            const timelineEntry = {
+              grievance_id: grievanceId,
+              action_type: 'forwarded',
+              action_description: `Grievance forwarded to ${recipientName} (${recipientEmail}) for resolution`,
+              performed_by: staffId,
+              metadata: {
+                recipient_email: recipientEmail,
+                recipient_name: recipientName,
+                priority: priority,
+                forwarded_by: staff.name
+              }
+            };
+            
+            timelineModel.addTimelineEntry(timelineEntry, (timelineErr) => {
+              if (timelineErr) {
+                console.error('Error adding timeline entry:', timelineErr);
+              }
+            });
+            
+            res.json({ 
+              message: 'Grievance successfully forwarded',
+              recipientName,
+              recipientEmail,
+              grievanceId
+            });
+            
+          } catch (emailErr) {
+            console.error('Error sending email:', emailErr);
+            res.status(500).json({ 
+              message: 'Failed to send email. Please check the recipient email address.' 
+            });
+          }
+        });
+      });
+    });
+    
+  } catch (error) {
+    console.error('Error in forwardGrievance:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};

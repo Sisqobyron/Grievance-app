@@ -136,5 +136,25 @@ exports.sendNotification = (user_id, message, callback) => {
   storeAndSendEmail(user_id, subject, htmlContent, message, callback);
 };
 
+// Generic email sending function (for forwarding grievances to external recipients)
+exports.sendEmail = async ({ to, subject, html, text }) => {
+  try {
+    const mailOptions = {
+      from: '"Student Grievance System" <byronbright2k21@gmail.com>',
+      to: to,
+      subject: subject,
+      html: html,
+      text: text || html.replace(/<[^>]*>/g, '') // Strip HTML if no text provided
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent successfully:', result.messageId);
+    return result;
+  } catch (error) {
+    console.error('❌ Email sending failed:', error);
+    throw error;
+  }
+};
+
 // Initialize email service
 testConnection();

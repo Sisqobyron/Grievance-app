@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
 import AuthProvider, { useAuth } from './contexts/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
+import StaffProtectedRoute from './components/StaffProtectedRoute'
 import Layout from './components/LayoutNew'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -183,7 +184,11 @@ const theme = createTheme({
 
 // Role-based dashboard component
 const DashboardWrapper = () => {
-  const { user } = useAuth();
+  const authContext = useAuth();
+  
+  if (!authContext) return <Navigate to="/login" />;
+  
+  const { user } = authContext;
   
   if (!user) return <Navigate to="/login" />;
   return user.role === 'staff' ? <StaffDashboard /> : <Dashboard />;
@@ -201,47 +206,65 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/" element={
                 <PrivateRoute>
-                  <DashboardWrapper />
+                  <StaffProtectedRoute>
+                    <DashboardWrapper />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/submit-grievance" element={
                 <PrivateRoute>
-                  <SubmitGrievance />
+                  <StaffProtectedRoute>
+                    <SubmitGrievance />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/grievances" element={
                 <PrivateRoute>
-                  <ViewGrievances />
+                  <StaffProtectedRoute>
+                    <ViewGrievances />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/notifications" element={
                 <PrivateRoute>
-                  <Notifications />
+                  <StaffProtectedRoute>
+                    <Notifications />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/coordinator" element={
                 <PrivateRoute>
-                  <CoordinatorDashboard />
+                  <StaffProtectedRoute>
+                    <CoordinatorDashboard />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/workspace-coordinator" element={
                 <PrivateRoute>
-                  <CoordinatorWorkspaceDashboard />
+                  <StaffProtectedRoute>
+                    <CoordinatorWorkspaceDashboard />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/escalation" element={
                 <PrivateRoute>
-                  <EscalationManagement />
+                  <StaffProtectedRoute>
+                    <EscalationManagement />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/deadlines" element={
                 <PrivateRoute>
-                  <DeadlineTracking />
+                  <StaffProtectedRoute>
+                    <DeadlineTracking />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/feedback" element={
                 <PrivateRoute>
-                  <FeedbackSystem />
+                  <StaffProtectedRoute>
+                    <FeedbackSystem />
+                  </StaffProtectedRoute>
                 </PrivateRoute>
               } />
             </Routes>

@@ -19,6 +19,7 @@ import {
 import { motion } from 'framer-motion'
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import logoImage from '../assets/logo-transparent-png.png'
+import StaffCodeVerification from '../components/StaffCodeVerification'
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -34,6 +35,7 @@ export default function Login() {
   const { login } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showStaffVerification, setShowStaffVerification] = useState(false)
   const theme = useTheme()
 
   const formik = useFormik({
@@ -47,8 +49,13 @@ export default function Login() {
     onSubmit: async (values) => {
       setIsSubmitting(true)
       try {
-        await login(values.email, values.password)
-        navigate('/')
+        const result = await login(values.email, values.password)
+        
+        if (result.requiresStaffCode) {
+          setShowStaffVerification(true)
+        } else {
+          navigate('/')
+        }
       } catch (error) {
         console.error(error)
       } finally {
@@ -56,6 +63,14 @@ export default function Login() {
       }
     }
   })
+
+  const handleStaffVerificationSuccess = () => {
+    navigate('/')
+  }
+
+  const handleStaffVerificationClose = () => {
+    setShowStaffVerification(false)
+  }
   return (
     <Box
       sx={{
@@ -313,6 +328,12 @@ export default function Login() {
           </Paper>
         </motion.div>
       </Container>
+      
+      <StaffCodeVerification 
+        open={showStaffVerification}
+        onClose={handleStaffVerificationClose}
+        onSuccess={handleStaffVerificationSuccess}
+      />
     </Box>
   )
 }

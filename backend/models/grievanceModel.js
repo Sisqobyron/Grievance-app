@@ -59,3 +59,20 @@ exports.getAllGrievances = (callback) => {
     ORDER BY g.submission_date DESC`;
   db.all(sql, [], callback);
 };
+
+// Get grievances by department (for staff)
+exports.getGrievancesByDepartment = (department, callback) => {
+  const sql = `
+    SELECT 
+      g.*,
+      u.name as student_name,
+      s.department,
+      s.program,
+      s.level
+    FROM grievances g
+    JOIN students s ON g.student_id = s.user_id
+    JOIN users u ON s.user_id = u.id
+    WHERE s.department = ?
+    ORDER BY g.submission_date DESC`;
+  db.all(sql, [department], callback);
+};

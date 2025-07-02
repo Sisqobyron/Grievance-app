@@ -12,5 +12,7 @@ router.get('/user/:userId', feedbackController.getFeedbackByUser);
 router.get('/all', feedbackController.getAllFeedback);
 // Get feedback statistics
 router.get('/stats', feedbackController.getFeedbackStats);
+// Get feedback statistics for a specific grievance
+router.get('/stats/:grievanceId', feedbackController.getFeedbackStatsForGrievance);
 
 module.exports = router;

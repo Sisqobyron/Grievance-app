@@ -27,7 +27,6 @@ import {
   Notifications,
   Settings,
   ExitToApp,
-  Person,
   SupervisorAccount,
   AccessTime,
   TrendingUp,
@@ -38,14 +37,21 @@ import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 
 export default function LayoutNew({ children }) {
-  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  
   const [anchorEl, setAnchorEl] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  
+  const authContext = useAuth()
+  console.log('AuthContext in LayoutNew:', authContext)
+  
+  if (!authContext) {
+    return <div>Loading auth context...</div>
+  }
+  
+  const { user, logout } = authContext
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget)
@@ -102,13 +108,7 @@ export default function LayoutNew({ children }) {
       roles: ['staff']
     },
     { 
-      text: 'My Workspace', 
-      icon: <Person />, 
-      path: '/workspace-coordinator',
-      roles: ['staff']
-    },
-    { 
-      text: 'Escalation Management', 
+      text: 'Escalation', 
       icon: <TrendingUp />, 
       path: '/escalation',
       roles: ['staff']

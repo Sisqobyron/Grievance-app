@@ -223,16 +223,34 @@ const deadlineController = {
 
   // Get upcoming deadlines (general - for dashboard)
   getGeneralUpcomingDeadlines: (req, res) => {
-    deadlineModel.getGeneralUpcomingDeadlines((err, deadlines) => {
-      if (err) {
-        return res.status(500).json({ 
-          message: 'Error retrieving upcoming deadlines', 
-          error: err 
-        });
-      }
-      
-      res.json(deadlines);
-    });
+    // Check if user is authenticated and if they are a student
+    const user = req.user;
+    
+    if (user && user.role === 'student') {
+      // For students, only show deadlines for their own grievances
+      deadlineModel.getStudentUpcomingDeadlines(user.id, (err, deadlines) => {
+        if (err) {
+          return res.status(500).json({ 
+            message: 'Error retrieving upcoming deadlines', 
+            error: err 
+          });
+        }
+        
+        res.json(deadlines);
+      });
+    } else {
+      // For staff/admin, show all deadlines
+      deadlineModel.getGeneralUpcomingDeadlines((err, deadlines) => {
+        if (err) {
+          return res.status(500).json({ 
+            message: 'Error retrieving upcoming deadlines', 
+            error: err 
+          });
+        }
+        
+        res.json(deadlines);
+      });
+    }
   }
 };
 

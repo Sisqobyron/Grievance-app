@@ -50,9 +50,14 @@ export default function Dashboard() {
   const [showDeadlines, setShowDeadlines] = useState(false);  const fetchDashboardData = useCallback(async () => {
     try {
       // Fetch grievances
-      const grievancesUrl = user.role === 'student'
-        ? `/api/grievances/student/${user.id}`
-        : '/api/grievances';
+      let grievancesUrl;
+      if (user.role === 'student') {
+        grievancesUrl = `/api/grievances/student/${user.id}`;
+      } else if (user.role === 'staff') {
+        grievancesUrl = '/api/grievances/department';
+      } else {
+        grievancesUrl = '/api/grievances'; // admin gets all grievances
+      }
       const grievancesResponse = await api.get(grievancesUrl);
       const grievances = grievancesResponse.data;
 
@@ -250,35 +255,40 @@ export default function Dashboard() {
         </Alert>
       )}
 
-      {/* Action Buttons */}
+      {/* Modern Action Buttons */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {[
           { 
-            text: showViz ? 'Hide Analytics' : '📊 View Analytics', 
+            text: showViz ? 'Hide Analytics' : '🎯 View 3D Analytics', 
             action: () => setShowViz(!showViz),
-            variant: 'outlined',
-            color: 'primary'
+            variant: showViz ? 'outlined' : 'contained',
+            color: 'primary',
+            gradient: 'linear-gradient(135deg, #4fc3f7, #29b6f6)',
+            icon: '📊'
           },
           { 
             text: showDeadlines ? 'Hide Deadlines' : '⏰ Track Deadlines', 
             action: () => setShowDeadlines(!showDeadlines),
             variant: 'outlined',
-            color: 'secondary'
+            color: 'secondary',
+            icon: '⏰'
           },
           { 
             text: '✍️ Submit New Grievance', 
             action: () => navigate('/submit-grievance'),
             variant: 'contained',
-            color: 'primary'
+            color: 'primary',
+            icon: '✍️'
           },
           { 
             text: '📋 View All Grievances', 
             action: () => navigate('/grievances'),
             variant: 'contained',
-            color: 'secondary'
+            color: 'secondary',
+            icon: '📋'
           }
-        ].map((btn, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
+        ].map((btn) => (
+          <Grid item xs={12} sm={6} md={3} key={btn.text}>
             <Button
               fullWidth
               variant={btn.variant}
@@ -286,25 +296,89 @@ export default function Dashboard() {
               onClick={btn.action}
               sx={{ 
                 py: 1.5,
-                borderRadius: 2,
+                borderRadius: 3,
                 textTransform: 'none',
-                fontWeight: 500,
-                fontSize: '0.95rem'
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                background: btn.gradient || undefined,
+                boxShadow: btn.gradient ? '0 8px 16px rgba(79, 195, 247, 0.3)' : undefined,
+                border: btn.variant === 'outlined' ? '2px solid' : undefined,
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: btn.gradient 
+                    ? '0 12px 24px rgba(79, 195, 247, 0.4)' 
+                    : '0 8px 16px rgba(0, 0, 0, 0.2)',
+                  background: btn.gradient || undefined
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
-              {btn.text}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <span style={{ fontSize: '1.1em' }}>{btn.icon}</span>
+                {btn.text}
+              </Box>
             </Button>
           </Grid>
         ))}
       </Grid>
 
-      {/* 3D Visualization */}
+      {/* Modern 3D Visualization */}
       {showViz && (
-        <Paper sx={{ p: 3, mb: 4, borderRadius: 3, bgcolor: '#1a1a1a' }}>
-          <Typography variant="h5" gutterBottom sx={{ color: 'white', fontWeight: 600 }}>
-            📈 Interactive Data Visualization
-          </Typography>
-          <Box sx={{ height: '400px', borderRadius: 2, overflow: 'hidden' }}>
+        <Paper 
+          sx={{ 
+            p: 0, 
+            mb: 4, 
+            borderRadius: 4,
+            background: 'linear-gradient(135deg, #1a1a1a 0%, #0d1421 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+            overflow: 'hidden',
+            position: 'relative'
+          }}
+        >
+          <Box 
+            sx={{ 
+              p: 3, 
+              background: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(20px)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    color: 'white', 
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #4fc3f7, #9c27b0)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    mb: 0.5
+                  }}
+                >
+                  � Advanced Analytics Visualization
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                >
+                  Interactive 3D representation of your grievance data with real-time statistics
+                </Typography>
+              </Box>
+              <Chip 
+                label="🚀 2025 Design" 
+                sx={{ 
+                  backgroundColor: 'rgba(76, 195, 247, 0.2)',
+                  color: '#4fc3f7',
+                  fontWeight: 600,
+                  fontSize: '0.75rem'
+                }} 
+              />
+            </Box>
+          </Box>
+          <Box sx={{ height: '500px', position: 'relative' }}>
             <GrievanceViz />
           </Box>
         </Paper>

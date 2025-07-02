@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../config/axios';
 import {
   Box,
   Card,
@@ -34,8 +35,12 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
+  console.log('FeedbackSystem props:', { grievanceId, userRole });
+  
   const [activeTab, setActiveTab] = useState(0);
   const [feedback, setFeedback] = useState([]);
+  const [userGrievances, setUserGrievances] = useState([]);
+  const [selectedGrievanceId, setSelectedGrievanceId] = useState(grievanceId || '');
   const [newFeedback, setNewFeedback] = useState({
     rating: 0,
     comment: '',
@@ -44,7 +49,7 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
   const [feedbackStats, setFeedbackStats] = useState({
     averageRating: 0,
     totalFeedback: 0,
-    ratingDistribution: {}
+    ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
   });
   const [loading, setLoading] = useState(false);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
@@ -60,23 +65,40 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
 
   useEffect(() => {
     if (grievanceId) {
+      setSelectedGrievanceId(grievanceId);
       fetchFeedback();
       fetchFeedbackStats();
+    } else {
+      // Fetch user's grievances for dropdown selection
+      fetchUserGrievances();
     }
   }, [grievanceId]);
 
+  const fetchUserGrievances = async () => {
+    try {
+      // Get the current user from localStorage
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) {
+        showAlert('Please log in to view your grievances', 'error');
+        return;
+      }
+
+      const response = await api.get(`/api/grievances/student/${user.id}`);
+      setUserGrievances(response.data);
+    } catch (error) {
+      console.error('Error fetching user grievances:', error);
+      showAlert('Error loading your grievances', 'error');
+    }
+  };
+
   const fetchFeedback = async () => {
+    const targetGrievanceId = selectedGrievanceId || grievanceId;
+    if (!targetGrievanceId) return;
+    
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/feedback/grievance/${grievanceId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setFeedback(data);
-      }
+      const response = await api.get(`/api/feedback/grievance/${targetGrievanceId}`);
+      setFeedback(response.data);
     } catch (error) {
       console.error('Error fetching feedback:', error);
       showAlert('Error loading feedback', 'error');
@@ -86,16 +108,12 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
   };
 
   const fetchFeedbackStats = async () => {
+    const targetGrievanceId = selectedGrievanceId || grievanceId;
+    if (!targetGrievanceId) return;
+    
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/feedback/stats/${grievanceId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setFeedbackStats(data);
-      }
+      const response = await api.get(`/api/feedback/stats/${targetGrievanceId}`);
+      setFeedbackStats(response.data);
     } catch (error) {
       console.error('Error fetching feedback stats:', error);
     }
@@ -107,34 +125,41 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
       return;
     }
 
+    const targetGrievanceId = selectedGrievanceId || grievanceId;
+    console.log('Current grievanceId:', targetGrievanceId, 'Type:', typeof targetGrievanceId);
+
+    if (!targetGrievanceId || targetGrievanceId === undefined || targetGrievanceId === null || targetGrievanceId === '') {
+      showAlert('Please select a grievance to provide feedback for.', 'error');
+      return;
+    }
+
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          grievanceId,
-          ...newFeedback
-        })
-      });
+      
+      const submitData = {
+        grievanceId: parseInt(targetGrievanceId) || targetGrievanceId,
+        rating: newFeedback.rating,
+        comment: newFeedback.comment,
+        category: newFeedback.category
+      };
+      
+      console.log('Submitting feedback with data:', submitData);
 
-      if (response.ok) {
-        showAlert('Feedback submitted successfully!', 'success');
-        setNewFeedback({ rating: 0, comment: '', category: 'general' });
-        setShowSubmissionForm(false);
-        fetchFeedback();
-        fetchFeedbackStats();
-        if (onFeedbackSubmitted) onFeedbackSubmitted();
+      await api.post('/api/feedback', submitData);
+
+      showAlert('Feedback submitted successfully!', 'success');
+      setNewFeedback({ rating: 0, comment: '', category: 'general' });
+      setShowSubmissionForm(false);
+      fetchFeedback();
+      fetchFeedbackStats();
+      if (onFeedbackSubmitted) onFeedbackSubmitted();
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      if (error.response?.data?.message) {
+        showAlert(`Error: ${error.response.data.message}`, 'error');
       } else {
         showAlert('Error submitting feedback', 'error');
       }
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      showAlert('Error submitting feedback', 'error');
     } finally {
       setLoading(false);
     }
@@ -175,12 +200,12 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 1 }}>
               <Typography variant="h3" sx={{ mr: 1 }}>
-                {feedbackStats.averageRating.toFixed(1)}
+                {(feedbackStats.averageRating || 0).toFixed(1)}
               </Typography>
               <StarIcon color="warning" sx={{ fontSize: 40 }} />
             </Box>
             <Rating
-              value={feedbackStats.averageRating}
+              value={feedbackStats.averageRating || 0}
               readOnly
               precision={0.1}
               sx={{ mt: 1 }}
@@ -222,7 +247,7 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
                 >
                   <Box
                     sx={{
-                      width: `${((feedbackStats.ratingDistribution[rating] || 0) / feedbackStats.totalFeedback) * 100}%`,
+                      width: `${feedbackStats.totalFeedback > 0 ? ((feedbackStats.ratingDistribution[rating] || 0) / feedbackStats.totalFeedback) * 100 : 0}%`,
                       height: '100%',
                       backgroundColor: 'warning.main',
                       borderRadius: 4
@@ -387,6 +412,37 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
         
         <DialogContent>
           <Box sx={{ pt: 2 }}>
+            {!grievanceId && (
+              <>
+                <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                  Select a grievance to provide feedback for:
+                </Typography>
+                <TextField
+                  select
+                  fullWidth
+                  label="Select Grievance"
+                  value={selectedGrievanceId}
+                  onChange={(e) => {
+                    setSelectedGrievanceId(e.target.value);
+                    // Fetch feedback for the selected grievance
+                    if (e.target.value) {
+                      fetchFeedback();
+                      fetchFeedbackStats();
+                    }
+                  }}
+                  SelectProps={{ native: true }}
+                  sx={{ mb: 3 }}
+                >
+                  <option value="">-- Select a Grievance --</option>
+                  {userGrievances.map((grievance) => (
+                    <option key={grievance.id} value={grievance.id}>
+                      #{grievance.id} - {grievance.type} ({grievance.status})
+                    </option>
+                  ))}
+                </TextField>
+              </>
+            )}
+            
             <Typography variant="subtitle1" sx={{ mb: 2 }}>
               How would you rate your experience?
             </Typography>
@@ -432,7 +488,7 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
           <Button
             variant="contained"
             onClick={handleSubmitFeedback}
-            disabled={loading || newFeedback.rating === 0}
+            disabled={loading || newFeedback.rating === 0 || (!grievanceId && !selectedGrievanceId)}
             startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
           >
             Submit Feedback

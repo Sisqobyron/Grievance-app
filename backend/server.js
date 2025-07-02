@@ -20,6 +20,16 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`, {
+    body: req.body,
+    headers: req.headers,
+    query: req.query
+  });
+  next();
+});
+
 // Static files for uploaded attachments
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -57,6 +67,12 @@ app.get('/', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
   });
+});
+
+// Test endpoint to verify server is receiving requests
+app.get('/test', (req, res) => {
+  console.log('Test endpoint hit!');
+  res.json({ message: 'Server is working!' });
 });
 
 // Health check endpoint

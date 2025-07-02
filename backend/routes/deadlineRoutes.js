@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const deadlineController = require('../controllers/deadlineController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Deadline management routes
 router.get('/', deadlineController.getAllDeadlines);
-router.get('/upcoming', deadlineController.getGeneralUpcomingDeadlines);
+router.get('/upcoming', authMiddleware, deadlineController.getGeneralUpcomingDeadlines);
 router.post('/', deadlineController.createDeadline);
 router.get('/grievance/:grievanceId', deadlineController.getGrievanceDeadlines);
 router.get('/coordinator/:coordinatorId/upcoming', deadlineController.getUpcomingDeadlines);

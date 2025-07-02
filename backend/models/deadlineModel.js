@@ -211,6 +211,32 @@ const deadlineModel = {
     `;
     
     db.all(sql, [], callback);
+  },
+
+  // Get upcoming deadlines for a specific student
+  getStudentUpcomingDeadlines: (studentId, callback) => {
+    const sql = `
+      SELECT 
+        gd.*,
+        g.id as grievance_id,
+        g.type as grievance_type,
+        g.priority_level,
+        u.name as student_name,
+        creator.name as created_by_name,
+        JULIANDAY(gd.deadline_date) - JULIANDAY('now') as days_remaining
+      FROM grievance_deadlines gd
+      JOIN grievances g ON gd.grievance_id = g.id
+      JOIN students s ON g.student_id = s.user_id
+      JOIN users u ON s.user_id = u.id
+      LEFT JOIN users creator ON gd.created_by = creator.id
+      WHERE gd.is_met = 0 
+        AND JULIANDAY(gd.deadline_date) >= JULIANDAY('now')
+        AND g.student_id = ?
+      ORDER BY gd.deadline_date ASC
+      LIMIT 10
+    `;
+    
+    db.all(sql, [studentId], callback);
   }
 };
 

@@ -72,9 +72,14 @@ export default function ViewGrievances() {
   const [detailTab, setDetailTab] = useState(0)
 
   const fetchGrievances = useCallback(async () => {    try {
-      const url = user.role === 'student'
-        ? `/api/grievances/student/${user.id}`
-        : '/api/grievances'
+      let url;
+      if (user.role === 'student') {
+        url = `/api/grievances/student/${user.id}`;
+      } else if (user.role === 'staff') {
+        url = '/api/grievances/department';
+      } else {
+        url = '/api/grievances'; // admin gets all grievances
+      }
       
       const response = await api.get(url)
       setGrievances(response.data)

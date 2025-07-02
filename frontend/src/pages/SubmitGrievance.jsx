@@ -268,7 +268,12 @@ export default function SubmitGrievance() {
               value={formik.values.priority_level}
               onChange={formik.handleChange}
               error={formik.touched.priority_level && Boolean(formik.errors.priority_level)}
-              helperText={formik.touched.priority_level && formik.errors.priority_level}            >
+              helperText={formik.touched.priority_level && formik.errors.priority_level || "Priority is automatically set based on your category selection"}
+              disabled={true}
+              InputProps={{
+                readOnly: true,
+              }}
+            >
               {priorityLevels.map((level) => (
                 <MenuItem key={level} value={level}>{level}</MenuItem>
               ))}

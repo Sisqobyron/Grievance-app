@@ -243,18 +243,24 @@ exports.getAllGrievances = (req, res) => {
 
 // Get grievances by department (for staff)
 exports.getGrievancesByDepartment = (req, res) => {
-  const staffUserId = req.user.id; // Assuming user ID is available from auth middleware
+  // The departmentAccessMiddleware has already verified the user and set req.staffDepartment
+  const department = req.staffDepartment;
   
-  // First, get the staff member's department
-  const staffModel = require('../models/staffModel');
-  staffModel.getStaffByUserId(staffUserId, (err, staff) => {
-    if (err) return res.status(500).json({ message: 'Error retrieving staff information', error: err });
-    if (!staff) return res.status(404).json({ message: 'Staff member not found' });
+  console.log(`Fetching grievances for ${department} department (requested by ${req.user.name})`);
+  
+  // Get grievances for this department
+  grievanceModel.getGrievancesByDepartment(department, (err, grievances) => {
+    if (err) {
+      console.error('Error retrieving department grievances:', err);
+      return res.status(500).json({ message: 'Error retrieving grievances', error: err });
+    }
     
-    // Get grievances for this department
-    grievanceModel.getGrievancesByDepartment(staff.department, (err, grievances) => {
-      if (err) return res.status(500).json({ message: 'Error retrieving grievances', error: err });
-      res.json(grievances);
+    console.log(`Found ${grievances.length} grievances for ${department} department`);
+    res.json({
+      department: department,
+      staffMember: req.user.name,
+      count: grievances.length,
+      grievances: grievances
     });
   });
 };

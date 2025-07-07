@@ -45,6 +45,7 @@ const deadlineRoutes = require('./routes/deadlineRoutes');
 const escalationRoutes = require('./routes/escalationRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // API Route declarations
 app.use('/api/auth', authRoutes);                 // Login
@@ -58,6 +59,7 @@ app.use('/api/deadlines', deadlineRoutes);        // Deadline management
 app.use('/api/escalation', escalationRoutes);    // Escalation and tracking
 app.use('/api/timeline', timelineRoutes);          // Real-time tracking and analytics
 app.use('/api/feedback', feedbackRoutes);          // Feedback management
+app.use('/api/admin', adminRoutes);               // Admin management
 
 // Root endpoint
 app.get('/', (req, res) => {

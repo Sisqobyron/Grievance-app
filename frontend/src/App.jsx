@@ -6,11 +6,13 @@ import './App.css'
 import AuthProvider, { useAuth } from './contexts/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
 import StaffProtectedRoute from './components/StaffProtectedRoute'
+import AdminProtectedRoute from './components/AdminProtectedRoute'
 import Layout from './components/LayoutNew'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import StaffDashboard from './pages/StaffDashboard'
+import AdminDashboard from './pages/AdminDashboard'
 import SubmitGrievance from './pages/SubmitGrievance'
 import ViewGrievances from './pages/ViewGrievances'
 import Notifications from './pages/Notifications'
@@ -191,7 +193,18 @@ const DashboardWrapper = () => {
   const { user } = authContext;
   
   if (!user) return <Navigate to="/login" />;
-  return user.role === 'staff' ? <StaffDashboard /> : <Dashboard />;
+  
+  // Route based on user role
+  switch (user.role) {
+    case 'admin':
+      return <AdminDashboard />;
+    case 'staff':
+      return <StaffDashboard />;
+    case 'student':
+      return <Dashboard />;
+    default:
+      return <Navigate to="/login" />;
+  }
 }
 
 function App() {
@@ -234,8 +247,15 @@ function App() {
               } />
               <Route path="/coordinator" element={
                 <PrivateRoute>
-                  <StaffProtectedRoute>
+                  <AdminProtectedRoute>
                     <CoordinatorDashboard />
+                  </AdminProtectedRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/coordinator-workspace" element={
+                <PrivateRoute>
+                  <StaffProtectedRoute>
+                    <CoordinatorWorkspaceDashboard />
                   </StaffProtectedRoute>
                 </PrivateRoute>
               } />
@@ -265,6 +285,13 @@ function App() {
                   <StaffProtectedRoute>
                     <FeedbackSystem />
                   </StaffProtectedRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/admin" element={
+                <PrivateRoute>
+                  <AdminProtectedRoute>
+                    <AdminDashboard />
+                  </AdminProtectedRoute>
                 </PrivateRoute>
               } />
             </Routes>

@@ -183,8 +183,11 @@ export default function StaffDashboard() {
       // Use department-specific endpoint for staff
       const response = await api.get('/api/grievances/department')
       
+      // Handle structured response from staff endpoint
+      const grievancesData = response.data.grievances || []
+      
       // Sort grievances by priority (Urgent -> High -> Medium -> Low)
-      const sortedGrievances = response.data.sort((a, b) => {
+      const sortedGrievances = Array.isArray(grievancesData) ? grievancesData.sort((a, b) => {
         const priorityOrder = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 }
         const aPriority = priorityOrder[a.priority_level] || 0
         const bPriority = priorityOrder[b.priority_level] || 0
@@ -194,14 +197,14 @@ export default function StaffDashboard() {
           return bPriority - aPriority
         }
         return new Date(b.submission_date) - new Date(a.submission_date)
-      })
+      }) : []
       
       setGrievances(sortedGrievances)
       
       // Calculate stats
-      const total = response.data.length
-      const resolved = response.data.filter(g => g.status === 'Resolved').length
-      const urgent = response.data.filter(g => g.priority_level === 'Urgent').length
+      const total = grievancesData.length
+      const resolved = grievancesData.filter(g => g.status === 'Resolved').length
+      const urgent = grievancesData.filter(g => g.priority_level === 'Urgent').length
         setStats({
         total,
         pending: total - resolved,
@@ -222,21 +225,30 @@ export default function StaffDashboard() {
         status: newStatus
       })
       
-      setGrievances(grievances.map(g => 
-        g.id === grievanceId ? { ...g, status: newStatus } : g
-      ))
+      setGrievances(prevGrievances => 
+        Array.isArray(prevGrievances) 
+          ? prevGrievances.map(g => 
+              g.id === grievanceId ? { ...g, status: newStatus } : g
+            )
+          : []
+      )
       
-      // Update stats
-      const total = grievances.length
-      const resolved = grievances.filter(g => 
-        g.id === grievanceId ? newStatus === 'Resolved' : g.status === 'Resolved'
-      ).length
-      
-      setStats(prev => ({
-        ...prev,
-        resolved,
-        pending: total - resolved
-      }))
+      // Update stats using functional update to access current state
+      setGrievances(currentGrievances => {
+        if (Array.isArray(currentGrievances)) {
+          const total = currentGrievances.length
+          const resolved = currentGrievances.filter(g => 
+            g.id === grievanceId ? newStatus === 'Resolved' : g.status === 'Resolved'
+          ).length
+          
+          setStats(prev => ({
+            ...prev,
+            resolved,
+            pending: total - resolved
+          }))
+        }
+        return currentGrievances
+      })
       
       toast.success('Status updated successfully')
     } catch (error) {

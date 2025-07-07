@@ -8,7 +8,7 @@ db.serialize(() => {
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('student', 'staff'))
+    role TEXT NOT NULL CHECK(role IN ('student', 'staff', 'admin'))
   )`);
 
   // Students table (linked to users)

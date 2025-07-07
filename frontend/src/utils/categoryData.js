@@ -8,7 +8,7 @@ export const hierarchicalCategories = {
       'Grading Issues': {
         keywords: ['grade', 'mark', 'score', 'assessment', 'exam', 'test', 'quiz', 'assignment', 'unfair', 'incorrect', 'wrong grade'],
         requiredFields: ['course_code', 'instructor_name', 'semester'],
-        priority: 'Medium'
+        priority: 'High'
       },
       'Course Content': {
         keywords: ['curriculum', 'syllabus', 'course material', 'textbook', 'outdated', 'irrelevant', 'missing content'],
@@ -84,7 +84,7 @@ export const hierarchicalCategories = {
         requiredFields: ['amount', 'reason_for_refund', 'semester'],
         priority: 'Medium'
       },
-      'Financial Records': {
+      'Financial Clearance': {
         keywords: ['financial statement', 'payment history', 'balance', 'account', 'financial record'],
         requiredFields: ['semester', 'record_type'],
         priority: 'Low'
@@ -99,7 +99,7 @@ export const hierarchicalCategories = {
       'Classroom Facilities': {
         keywords: ['classroom', 'projector', 'air conditioning', 'lighting', 'furniture', 'equipment', 'broken'],
         requiredFields: ['location', 'facility_type'],
-        priority: 'Medium'
+        priority: 'High'
       },
       'Library Issues': {
         keywords: ['library', 'books', 'computer', 'internet', 'study space', 'noise', 'resources'],

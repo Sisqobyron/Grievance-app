@@ -41,6 +41,7 @@ export default function AuthProvider({ children }) {
         return { requiresStaffCode: true, user: userData }
       }
       
+      // Admin and students can login directly
       setUser(userData)
       localStorage.setItem('user', JSON.stringify(userData))
       return { user: userData }

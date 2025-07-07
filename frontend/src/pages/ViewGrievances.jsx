@@ -62,6 +62,7 @@ const getStatusColor = (status) => {
 export default function ViewGrievances() {
   const { user } = useAuth()
   const [grievances, setGrievances] = useState([])
+  const [departmentInfo, setDepartmentInfo] = useState(null) // For staff department info
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState(null)
   const [messageDialogOpen, setMessageDialogOpen] = useState(false)
@@ -71,7 +72,8 @@ export default function ViewGrievances() {
   const [selectedGrievance, setSelectedGrievance] = useState(null)
   const [detailTab, setDetailTab] = useState(0)
 
-  const fetchGrievances = useCallback(async () => {    try {
+  const fetchGrievances = useCallback(async () => {
+    try {
       let url;
       if (user.role === 'student') {
         url = `/api/grievances/student/${user.id}`;
@@ -82,9 +84,27 @@ export default function ViewGrievances() {
       }
       
       const response = await api.get(url)
-      setGrievances(response.data)
+      console.log('API Response:', response.data) // Debug logging
+      
+      // Handle different response formats
+      if (user.role === 'staff' && response.data.grievances) {
+        // Staff endpoint returns { department, count, grievances: [...] }
+        console.log('Staff response - grievances:', response.data.grievances) // Debug logging
+        setGrievances(Array.isArray(response.data.grievances) ? response.data.grievances : [])
+        setDepartmentInfo({
+          department: response.data.department,
+          count: response.data.count,
+          staffMember: response.data.staffMember
+        })
+      } else {
+        // Student and admin endpoints return grievances array directly
+        console.log('Student/Admin response - data:', response.data) // Debug logging
+        setGrievances(Array.isArray(response.data) ? response.data : [])
+        setDepartmentInfo(null)
+      }
     } catch (err) {
       console.error('Error fetching grievances:', err)
+      setGrievances([]) // Ensure grievances is always an array on error
       toast.error('Failed to fetch grievances')
     } finally {
       setLoading(false)
@@ -106,9 +126,13 @@ export default function ViewGrievances() {
         status: newStatus
       })
       
-      setGrievances(grievances.map(g => 
-        g.id === grievanceId ? { ...g, status: newStatus } : g
-      ))
+      setGrievances(prevGrievances => 
+        Array.isArray(prevGrievances) 
+          ? prevGrievances.map(g => 
+              g.id === grievanceId ? { ...g, status: newStatus } : g
+            )
+          : []
+      )
       
       toast.success('Status updated successfully')
     } catch (err) {
@@ -172,9 +196,18 @@ export default function ViewGrievances() {
     <Container maxWidth="lg">
       <Paper sx={{ p: 4, mt: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h5">
-            {user.role === 'student' ? 'My Grievances' : 'All Grievances'}
-          </Typography>
+          <Box>
+            <Typography variant="h5">
+              {user.role === 'student' ? 'My Grievances' : 
+               user.role === 'staff' ? `${departmentInfo?.department || ''} Department Grievances` : 
+               'All Grievances'}
+            </Typography>
+            {user.role === 'staff' && departmentInfo && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                {departmentInfo.count} grievances • Viewing as {departmentInfo.staffMember}
+              </Typography>
+            )}
+          </Box>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
@@ -205,16 +238,18 @@ export default function ViewGrievances() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {grievances.map((grievance) => (
-                <TableRow 
-                  key={grievance.id}
-                  hover
-                  sx={{ cursor: 'pointer' }}
-                  onClick={() => openDetailDialog(grievance)}
-                >
-                  <TableCell>{grievance.id}</TableCell>
-                  {user.role === 'staff' && (
-                    <>
+              {Array.isArray(grievances) ? (
+                grievances.length > 0 ? (
+                  grievances.map((grievance) => (
+                    <TableRow 
+                      key={grievance.id}
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => openDetailDialog(grievance)}
+                    >
+                      <TableCell>{grievance.id}</TableCell>
+                      {user.role === 'staff' && (
+                        <>
                       <TableCell>
                         <Typography variant="body2">
                           {grievance.student_name}
@@ -312,16 +347,34 @@ export default function ViewGrievances() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))}
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell 
+                      colSpan={user.role === 'staff' ? 9 : 7} 
+                      sx={{ textAlign: 'center', py: 4 }}
+                    >
+                      <Typography variant="body1" color="textSecondary">
+                        No grievances found.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )
+              ) : (
+                <TableRow>
+                  <TableCell 
+                    colSpan={user.role === 'staff' ? 9 : 7} 
+                    sx={{ textAlign: 'center', py: 4 }}
+                  >
+                    <Typography variant="body1" color="error">
+                      Error loading grievances. Please refresh the page.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
-
-        {grievances.length === 0 && (
-          <Typography sx={{ mt: 2, textAlign: 'center' }}>
-            No grievances found.
-          </Typography>
-        )}
       </Paper>
 
       <Dialog

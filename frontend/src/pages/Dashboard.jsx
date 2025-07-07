@@ -59,7 +59,16 @@ export default function Dashboard() {
         grievancesUrl = '/api/grievances'; // admin gets all grievances
       }
       const grievancesResponse = await api.get(grievancesUrl);
-      const grievances = grievancesResponse.data;
+      
+      // Handle different response formats based on user role
+      let grievances;
+      if (user.role === 'staff' && grievancesResponse.data.grievances) {
+        // Staff endpoint returns { department, count, grievances: [...] }
+        grievances = Array.isArray(grievancesResponse.data.grievances) ? grievancesResponse.data.grievances : [];
+      } else {
+        // Student and admin endpoints return grievances array directly
+        grievances = Array.isArray(grievancesResponse.data) ? grievancesResponse.data : [];
+      }
 
       // Calculate enhanced stats
       const resolved = grievances.filter(g => g.status === 'Resolved').length;

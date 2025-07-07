@@ -242,30 +242,32 @@ const CoordinatorWorkspaceDashboard = () => {
       
     } catch (error) {
       console.error('Error fetching coordinator data:', error);
+      console.error('Error details:', error.response?.data || error.message);
       // Fallback to alternative endpoints if dashboard fails
       fetchAssignedGrievances(coordinatorData);
       fetchUpcomingDeadlines();
+    } finally {
+      setLoading(false);
     }
   }, [fetchAssignedGrievances, fetchUpcomingDeadlines]);  const fetchRecentActivity = useCallback(async (coordinatorData) => {
     try {
-      // Use the correct timeline endpoint for coordinator activity
-      const coordinatorId = coordinatorData?.id || user.id;
-      const response = await api.get(`/api/timeline/coordinator/${coordinatorId}`);
-      setRecentActivity(response.data);
+      // Use a general timeline endpoint since coordinator-specific one may not exist
+      const response = await api.get('/api/timeline/recent');
+      const allActivity = response.data;
+      
+      // Filter activity relevant to this coordinator's grievances
+      const coordinatorGrievanceIds = assignedGrievances.map(g => g.id);
+      const relevantActivity = allActivity.filter(activity => 
+        coordinatorGrievanceIds.includes(activity.grievance_id)
+      );
+      
+      setRecentActivity(relevantActivity.slice(0, 10));
     } catch (error) {
       console.error('Error fetching recent activity:', error);
-      // Fallback to general recent activity if coordinator-specific fails
-      try {
-        const fallbackResponse = await api.get('/api/timeline/recent');
-        const recentActivity = fallbackResponse.data.slice(0, 10);
-        setRecentActivity(recentActivity);
-      } catch (fallbackError) {
-        console.error('Fallback error:', fallbackError);
-        // Set empty array to prevent UI issues
-        setRecentActivity([]);
-      }
+      // Set empty array to prevent UI issues
+      setRecentActivity([]);
     }
-  }, [user.id]);
+  }, [assignedGrievances]);
 
   const handleStatusUpdate = async () => {
     try {
@@ -279,8 +281,11 @@ const CoordinatorWorkspaceDashboard = () => {
       setStatusUpdateDialog(false);
       setNewStatus('');
       setStatusComment('');
-      fetchAssignedGrievances();
-      fetchCoordinatorData();
+      
+      // Refresh the coordinator data
+      if (coordinator) {
+        fetchCoordinatorData(coordinator);
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update status');
@@ -299,7 +304,11 @@ const CoordinatorWorkspaceDashboard = () => {
       toast.success('Message sent successfully');
       setMessageDialog(false);
       setNewMessage('');
-      fetchRecentActivity();
+      
+      // Refresh recent activity
+      if (coordinator) {
+        fetchRecentActivity(coordinator);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');

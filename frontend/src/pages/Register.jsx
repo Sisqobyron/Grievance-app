@@ -348,6 +348,7 @@ export default function Register() {
                   >
                     <MenuItem value="student">👨‍🎓 Student</MenuItem>
                     <MenuItem value="staff">👨‍💼 Staff</MenuItem>
+                    <MenuItem value="admin">👨‍💻 Admin</MenuItem>
                   </Select>
                   {formik.touched.role && formik.errors.role && (
                     <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>

@@ -118,6 +118,23 @@ exports.registerUser = (req, res) => {
         res.status(201).json({ message: 'Staff registered successfully', user: newUser });
       });
 
+    } else if (role === 'admin') {
+      // Admin users don't need additional profile data
+      console.log('Admin created successfully');
+      
+      // Send welcome email to new admin
+      const userData = {
+        full_name: name,
+        email: email,
+        role: role
+      };
+      
+      notifier.sendWelcomeEmail(user_id, userData, (emailErr) => {
+        if (emailErr) console.error('Error sending welcome email:', emailErr);
+      });
+      
+      res.status(201).json({ message: 'Admin registered successfully', user: newUser });
+
     } else {
       console.log('Invalid role:', role);
       res.status(400).json({ message: 'Invalid role specified' });

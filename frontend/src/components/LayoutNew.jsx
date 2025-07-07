@@ -30,10 +30,12 @@ import {
   SupervisorAccount,
   AccessTime,
   TrendingUp,
-  Feedback
+  Feedback,
+  Work
 } from '@mui/icons-material'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useCoordinatorStatus } from '../hooks/useCoordinatorStatus'
 import Logo from './Logo'
 
 export default function LayoutNew({ children }) {
@@ -45,6 +47,7 @@ export default function LayoutNew({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   
   const authContext = useAuth()
+  const { isCoordinator } = useCoordinatorStatus()
   console.log('AuthContext in LayoutNew:', authContext)
   
   if (!authContext) {
@@ -81,7 +84,7 @@ export default function LayoutNew({ children }) {
       text: 'Dashboard', 
       icon: <Dashboard />, 
       path: '/',
-      roles: ['student', 'staff']
+      roles: ['student', 'staff', 'admin']
     },
     { 
       text: 'Submit Grievance', 
@@ -102,10 +105,17 @@ export default function LayoutNew({ children }) {
       roles: ['student', 'staff']
     },
     { 
-      text: 'Coordinator Panel', 
+      text: 'Coordinator Management', 
       icon: <SupervisorAccount />, 
       path: '/coordinator',
-      roles: ['staff']
+      roles: ['admin'] // Only admins can manage coordinators
+    },
+    { 
+      text: 'My Coordinator Workspace', 
+      icon: <Work />, 
+      path: '/coordinator-workspace',
+      roles: ['staff'], // Staff who are coordinators
+      requiresCoordinator: true
     },
     { 
       text: 'Escalation', 
@@ -125,7 +135,25 @@ export default function LayoutNew({ children }) {
       path: '/feedback',
       roles: ['student', 'staff']
     },
-  ].filter(item => item.roles.includes(user?.role))
+    { 
+      text: 'Admin Panel', 
+      icon: <SupervisorAccount />, 
+      path: '/admin',
+      roles: ['admin']
+    },
+  ].filter(item => {
+    // Check if user has the required role
+    if (!item.roles.includes(user?.role)) {
+      return false;
+    }
+    
+    // If item requires coordinator status, check it
+    if (item.requiresCoordinator && !isCoordinator) {
+      return false;
+    }
+    
+    return true;
+  })
 
   const drawer = (
     <Box>

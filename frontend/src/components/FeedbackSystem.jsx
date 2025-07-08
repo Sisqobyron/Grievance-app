@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../config/axios';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Card,
@@ -32,10 +33,18 @@ import {
   Send as SendIcon,
   Analytics as AnalyticsIcon
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
-  console.log('FeedbackSystem props:', { grievanceId, userRole });
+  const { user } = useAuth(); // Get user from context if not provided
+  const effectiveUserRole = userRole || user?.role;
+  const effectiveUserId = user?.id;
+  
+  console.log('FeedbackSystem props:', { 
+    grievanceId, 
+    userRole: effectiveUserRole,
+    userId: effectiveUserId 
+  });
   
   const [activeTab, setActiveTab] = useState(0);
   const [feedback, setFeedback] = useState([]);
@@ -63,35 +72,42 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
     { value: 'staff', label: 'Staff Behavior' }
   ];
 
-  useEffect(() => {
-    if (grievanceId) {
-      setSelectedGrievanceId(grievanceId);
-      fetchFeedback();
-      fetchFeedbackStats();
-    } else {
-      // Fetch user's grievances for dropdown selection
-      fetchUserGrievances();
-    }
-  }, [grievanceId]);
+  const showAlert = (message, type = 'info') => {
+    setAlert({ message, type });
+    setTimeout(() => setAlert(null), 5000);
+  };
 
-  const fetchUserGrievances = async () => {
+  const fetchUserGrievances = useCallback(async () => {
     try {
-      // Get the current user from localStorage
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!user.id) {
+      if (!effectiveUserId) {
         showAlert('Please log in to view your grievances', 'error');
         return;
       }
 
-      const response = await api.get(`/api/grievances/student/${user.id}`);
-      setUserGrievances(response.data);
+      let url;
+      if (effectiveUserRole === 'student') {
+        url = `/api/grievances/student/${effectiveUserId}`;
+      } else if (effectiveUserRole === 'staff') {
+        url = `/api/grievances/department`;
+      } else {
+        url = `/api/grievances`;
+      }
+      
+      const response = await api.get(url);
+      
+      // Handle different response formats
+      if (effectiveUserRole === 'staff' && response.data.grievances) {
+        setUserGrievances(response.data.grievances);
+      } else {
+        setUserGrievances(Array.isArray(response.data) ? response.data : []);
+      }
     } catch (error) {
       console.error('Error fetching user grievances:', error);
       showAlert('Error loading your grievances', 'error');
     }
-  };
+  }, [effectiveUserId, effectiveUserRole]);
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = useCallback(async () => {
     const targetGrievanceId = selectedGrievanceId || grievanceId;
     if (!targetGrievanceId) return;
     
@@ -105,9 +121,9 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedGrievanceId, grievanceId]);
 
-  const fetchFeedbackStats = async () => {
+  const fetchFeedbackStats = useCallback(async () => {
     const targetGrievanceId = selectedGrievanceId || grievanceId;
     if (!targetGrievanceId) return;
     
@@ -117,7 +133,31 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
     } catch (error) {
       console.error('Error fetching feedback stats:', error);
     }
-  };
+  }, [selectedGrievanceId, grievanceId]);
+
+  useEffect(() => {
+    if (effectiveUserId) {
+      if (grievanceId) {
+        setSelectedGrievanceId(grievanceId);
+        fetchFeedback();
+        fetchFeedbackStats();
+      } else {
+        // Fetch user's grievances for dropdown selection
+        fetchUserGrievances();
+      }
+    }
+  }, [grievanceId, effectiveUserId, fetchFeedback, fetchFeedbackStats, fetchUserGrievances]);
+
+  // Early return if user is not available (after all hooks)
+  if (!effectiveUserRole || !effectiveUserId) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" color="textSecondary">
+          Loading user information...
+        </Typography>
+      </Box>
+    );
+  }
 
   const handleSubmitFeedback = async () => {
     if (newFeedback.rating === 0) {
@@ -165,11 +205,6 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
     }
   };
 
-  const showAlert = (message, severity) => {
-    setAlert({ message, severity });
-    setTimeout(() => setAlert(null), 5000);
-  };
-
   const getRatingColor = (rating) => {
     if (rating >= 4) return 'success';
     if (rating >= 3) return 'warning';
@@ -187,11 +222,7 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
   };
 
   const FeedbackStatsTab = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={4}>
           <Card sx={{ textAlign: 'center', p: 2 }}>
@@ -262,31 +293,20 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
           </Card>
         </Grid>
       </Grid>
-    </motion.div>
+    </div>
   );
 
   const FeedbackListTab = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress />
         </Box>
       ) : (
         <List>
-          <AnimatePresence>
-            {feedback.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
-                <Card sx={{ mb: 2 }}>
+          {feedback.map((item) => (
+            <div key={item.id}>
+              <Card sx={{ mb: 2 }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'between', alignItems: 'flex-start', mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -320,9 +340,8 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
                     )}
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
           
           {feedback.length === 0 && (
             <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -337,7 +356,7 @@ const FeedbackSystem = ({ grievanceId, userRole, onFeedbackSubmitted }) => {
           )}
         </List>
       )}
-    </motion.div>
+    </div>
   );
 
   return (

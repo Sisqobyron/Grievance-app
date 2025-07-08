@@ -29,6 +29,11 @@ export const hierarchicalCategories = {
         keywords: ['assignment', 'project', 'homework', 'deadline', 'late submission', 'unclear instructions'],
         requiredFields: ['course_code', 'assignment_title', 'semester'],
         priority: 'Medium'
+      },
+      'Results': {
+        keywords: ['exams', 'results'],
+        requiredFields: ['exam_date', 'semester'],
+        priority: 'High'
       }
     }
   },

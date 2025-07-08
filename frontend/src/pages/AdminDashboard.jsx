@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -53,6 +54,7 @@ import api from '../config/axios';
 import { hierarchicalCategories } from '../utils/categoryData';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [users, setUsers] = useState([]);
   const [grievances, setGrievances] = useState([]);
@@ -301,6 +303,35 @@ const AdminDashboard = () => {
             </Box>
           </CardContent>
         </Card>
+      </Grid>
+
+      {/* Quick Actions */}
+      <Grid item xs={12}>
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Quick Actions
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                startIcon={<TrendingUpIcon />}
+                onClick={() => navigate('/escalation')}
+                sx={{
+                  background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+                  color: 'white',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #ff7a7e 0%, #fdbfef 100%)',
+                  }
+                }}
+              >
+                Escalation Management
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
       </Grid>
 
       {/* Recent Users */}

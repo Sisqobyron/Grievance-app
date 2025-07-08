@@ -20,7 +20,7 @@ import CoordinatorDashboard from './components/CoordinatorDashboard'
 import CoordinatorWorkspaceDashboard from './components/CoordinatorWorkspaceDashboard'
 import EscalationManagement from './components/EscalationManagement'
 import DeadlineTracking from './components/DeadlineTracking'
-import FeedbackSystem from './components/FeedbackSystem'
+import FeedbackPage from './pages/FeedbackPage'
 
 // Create modern 2025 theme configuration
 const theme = createTheme({
@@ -268,9 +268,9 @@ function App() {
               } />
               <Route path="/escalation" element={
                 <PrivateRoute>
-                  <StaffProtectedRoute>
+                  <AdminProtectedRoute>
                     <EscalationManagement />
-                  </StaffProtectedRoute>
+                  </AdminProtectedRoute>
                 </PrivateRoute>
               } />
               <Route path="/deadlines" element={
@@ -283,7 +283,7 @@ function App() {
               <Route path="/feedback" element={
                 <PrivateRoute>
                   <StaffProtectedRoute>
-                    <FeedbackSystem />
+                    <FeedbackPage />
                   </StaffProtectedRoute>
                 </PrivateRoute>
               } />

@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const escalationController = require('../controllers/escalationController');
+const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
+
+// Apply authentication and admin middleware to all escalation routes
+router.use(authMiddleware);
+router.use(adminMiddleware);
 
 // Escalation rule management
 router.post('/rules', escalationController.createEscalationRule);

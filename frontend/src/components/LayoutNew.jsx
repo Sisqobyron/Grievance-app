@@ -121,7 +121,7 @@ export default function LayoutNew({ children }) {
       text: 'Escalation', 
       icon: <TrendingUp />, 
       path: '/escalation',
-      roles: ['staff']
+      roles: ['admin']
     },
     { 
       text: 'Deadlines', 

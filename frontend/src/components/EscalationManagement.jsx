@@ -42,7 +42,7 @@ import {
   Visibility
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import api from '../config/axios';
 import { toast } from 'react-toastify';
 
 const EscalationManagement = () => {
@@ -94,9 +94,9 @@ const EscalationManagement = () => {
   const fetchEscalationData = async () => {
     try {
       const [rulesResponse, historyResponse, metricsResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/escalation/rules'),
-        axios.get('http://localhost:5000/api/escalation/history'),
-        axios.get('http://localhost:5000/api/escalation/metrics')
+        api.get('/api/escalation/rules'),
+        api.get('/api/escalation/history'),
+        api.get('/api/escalation/metrics')
       ]);
 
       setEscalationRules(rulesResponse.data);
@@ -122,7 +122,7 @@ const EscalationManagement = () => {
         escalation_target: ruleFormData.escalationTarget || 'System'
       };
 
-      await axios.post('http://localhost:5000/api/escalation/rules', apiData);
+      await api.post('/api/escalation/rules', apiData);
       toast.success('Escalation rule created successfully');
       setRuleDialogOpen(false);
       fetchEscalationData();
@@ -145,7 +145,7 @@ const EscalationManagement = () => {
         escalation_target: ruleFormData.escalationTarget || 'System'
       };
 
-      await axios.put(`http://localhost:5000/api/escalation/rules/${editingRule.id}`, apiData);
+      await api.put(`/api/escalation/rules/${editingRule.id}`, apiData);
       toast.success('Escalation rule updated successfully');
       setRuleDialogOpen(false);
       setEditingRule(null);
@@ -160,7 +160,7 @@ const EscalationManagement = () => {
   const handleDeleteRule = async (id) => {
     if (window.confirm('Are you sure you want to delete this escalation rule?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/escalation/rules/${id}`);
+        await api.delete(`/api/escalation/rules/${id}`);
         toast.success('Escalation rule deleted successfully');
         fetchEscalationData();
       } catch (error) {
@@ -171,7 +171,7 @@ const EscalationManagement = () => {
   };
   const toggleRuleStatus = async (id, isActive) => {
     try {
-      await axios.put(`http://localhost:5000/api/escalation/rules/${id}/status`, { is_active: !isActive });
+      await api.put(`/api/escalation/rules/${id}/status`, { is_active: !isActive });
       toast.success(`Rule ${!isActive ? 'activated' : 'deactivated'} successfully`);
       fetchEscalationData();
     } catch (error) {

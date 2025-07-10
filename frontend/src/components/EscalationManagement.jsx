@@ -67,10 +67,9 @@ const EscalationManagement = () => {
   });
   const triggerTypes = [
     'time_exceeded',
-    'status_unchanged',
-    'priority_level',
-    'department_workload',
-    'deadline_missed'
+    'status_unchanged', 
+    'deadline_missed',
+    'manual'
   ];
 
   const conditions = [
@@ -83,8 +82,7 @@ const EscalationManagement = () => {
     'reassign',
     'notify_supervisor',
     'escalate_priority',
-    'send_notification',
-    'create_deadline'
+    'auto_resolve'
   ];
 
   useEffect(() => {
@@ -114,10 +112,10 @@ const EscalationManagement = () => {
       // Transform camelCase form data to snake_case for API
       const apiData = {
         rule_name: ruleFormData.name,
-        grievance_type: ruleFormData.triggerType === 'grievance_type' ? ruleFormData.triggerValue : null,
-        priority_level: ruleFormData.triggerType === 'priority_level' ? ruleFormData.triggerValue : null,
+        grievance_type: null, // Not used in current form
+        priority_level: null, // Not used in current form  
         trigger_condition: ruleFormData.triggerType,
-        trigger_value: ruleFormData.triggerValue,
+        trigger_value: parseInt(ruleFormData.triggerValue) || null,
         escalation_action: ruleFormData.action,
         escalation_target: ruleFormData.escalationTarget || 'System'
       };
@@ -137,10 +135,10 @@ const EscalationManagement = () => {
       // Transform camelCase form data to snake_case for API
       const apiData = {
         rule_name: ruleFormData.name,
-        grievance_type: ruleFormData.triggerType === 'grievance_type' ? ruleFormData.triggerValue : null,
-        priority_level: ruleFormData.triggerType === 'priority_level' ? ruleFormData.triggerValue : null,
+        grievance_type: null, // Not used in current form
+        priority_level: null, // Not used in current form
         trigger_condition: ruleFormData.triggerType,
-        trigger_value: ruleFormData.triggerValue,
+        trigger_value: parseInt(ruleFormData.triggerValue) || null,
         escalation_action: ruleFormData.action,
         escalation_target: ruleFormData.escalationTarget || 'System'
       };

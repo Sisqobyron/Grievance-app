@@ -155,7 +155,7 @@ export const hierarchicalCategories = {
 // Keywords for smart category suggestion
 export const categoryKeywords = Object.entries(hierarchicalCategories).reduce((acc, [category, data]) => {
   acc[category] = [];
-  Object.entries(data.subcategories).forEach(([subcategory, subData]) => {
+  Object.entries(data.subcategories).forEach(([, subData]) => {
     acc[category].push(...subData.keywords);
   });
   return acc;
@@ -163,7 +163,6 @@ export const categoryKeywords = Object.entries(hierarchicalCategories).reduce((a
 
 // Function to suggest categories based on description
 export const suggestCategories = (description) => {
-  const words = description.toLowerCase().split(/\s+/);
   const suggestions = [];
 
   Object.entries(hierarchicalCategories).forEach(([category, data]) => {

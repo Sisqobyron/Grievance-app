@@ -41,7 +41,7 @@ import {
   Stop,
   Visibility
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import api from '../config/axios';
 import { toast } from 'react-toastify';
 
@@ -243,7 +243,7 @@ const EscalationManagement = () => {
       {/* Metrics Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ scale: 1.02 }}>
+          <Motion.div whileHover={{ scale: 1.02 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -259,10 +259,10 @@ const EscalationManagement = () => {
                 </Box>
               </CardContent>
             </Card>
-          </motion.div>
+          </Motion.div>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ scale: 1.02 }}>
+          <Motion.div whileHover={{ scale: 1.02 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -278,10 +278,10 @@ const EscalationManagement = () => {
                 </Box>
               </CardContent>
             </Card>
-          </motion.div>
+          </Motion.div>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ scale: 1.02 }}>
+          <Motion.div whileHover={{ scale: 1.02 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -297,10 +297,10 @@ const EscalationManagement = () => {
                 </Box>
               </CardContent>
             </Card>
-          </motion.div>
+          </Motion.div>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ scale: 1.02 }}>
+          <Motion.div whileHover={{ scale: 1.02 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -316,7 +316,7 @@ const EscalationManagement = () => {
                 </Box>
               </CardContent>
             </Card>
-          </motion.div>
+          </Motion.div>
         </Grid>
       </Grid>
 

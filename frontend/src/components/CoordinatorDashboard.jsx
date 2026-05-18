@@ -36,12 +36,12 @@ import {
   Edit,
   Delete
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import api from '../config/axios';
 import { toast } from 'react-toastify';
 
 const StatCard = ({ title, value, icon, color, subtitle }) => (
-  <motion.div
+  <Motion.div
     whileHover={{ scale: 1.02 }}
     transition={{ duration: 0.2 }}
   >
@@ -74,7 +74,7 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
         </Box>
       </CardContent>
     </Card>
-  </motion.div>
+  </Motion.div>
 );
 
 const CoordinatorDashboard = () => {
@@ -132,7 +132,6 @@ const CoordinatorDashboard = () => {
       const coordinators = coordResponse.data;
       const assignments = assignmentResponse.data;
 
-      const totalCoordinators = coordinators.length;
       const activeCoordinators = coordinators.filter(c => c.is_active).length;
       const activeAssignments = assignments.filter(a => a.is_active).length;
       const avgWorkload = activeCoordinators > 0 

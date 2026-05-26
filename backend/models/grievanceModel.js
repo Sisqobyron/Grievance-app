@@ -127,3 +127,46 @@ exports.getGrievancesByPriority = (priority, callback) => {
     ORDER BY g.submission_date DESC`;
   db.all(sql, [priority], callback);
 };
+
+exports.getOverviewStats = (callback) => {
+    const sql = `
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) AS resolved,
+        SUM(CASE WHEN status IN ('Pending', 'In Progress') THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) AS rejected
+      FROM grievances
+    `;
+
+    db.get(sql, [], callback);
+};
+
+exports.getCountByField = (field, callback) => {
+    const allowedFields = ['priority_level', 'type'];
+
+    if (!allowedFields.includes(field)) {
+      callback(new Error('Unsupported field'));
+      return;
+    }
+
+    const sql = `
+      SELECT ${field} AS key, COUNT(*) AS count
+      FROM grievances
+      WHERE ${field} IS NOT NULL AND ${field} != ''
+      GROUP BY ${field}
+    `;
+
+    db.all(sql, [], callback);
+};
+
+exports.getMonthlyStats = (callback) => {
+    const sql = `
+      SELECT substr(submission_date, 1, 7) AS month, COUNT(*) AS count
+      FROM grievances
+      WHERE submission_date IS NOT NULL
+      GROUP BY substr(submission_date, 1, 7)
+      ORDER BY month
+    `;
+
+    db.all(sql, [], callback);
+};

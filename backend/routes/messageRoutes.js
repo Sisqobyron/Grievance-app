@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const messageController = require('../controllers/messageController');
 const authMiddleware = require('../middleware/authMiddleware');
+const rateLimiter = require('../middleware/rateLimitMiddleware');
 
 // Protected routes - require authentication
+router.use(rateLimiter);
 router.use(authMiddleware);
 
 // Send a new message

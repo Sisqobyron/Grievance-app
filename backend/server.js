@@ -1,6 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimiter = require('./middleware/rateLimitMiddleware');
+
+const securityHeaders = (req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('X-XSS-Protection', '0');
+  next();
+};
 
 // Initialize Express app
 const app = express();
@@ -16,17 +26,25 @@ const corsOptions = {
 };
 
 // Middleware
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(securityHeaders);
+app.use(rateLimiter);
+app.use(express.json({ limit: process.env.MAX_JSON_BODY_SIZE || '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: process.env.MAX_JSON_BODY_SIZE || '1mb' }));
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`, {
-    body: req.body,
-    headers: req.headers,
-    query: req.query
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('request', {
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      path: req.path,
+      query: req.query,
+      bodyKeys: Object.keys(req.body || {})
+    });
+  }
   next();
 });
 
@@ -73,7 +91,6 @@ app.get('/', (req, res) => {
 
 // Test endpoint to verify server is receiving requests
 app.get('/test', (req, res) => {
-  console.log('Test endpoint hit!');
   res.json({ message: 'Server is working!' });
 });
 

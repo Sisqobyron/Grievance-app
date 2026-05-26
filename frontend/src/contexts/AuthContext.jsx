@@ -32,18 +32,23 @@ export default function AuthProvider({ children }) {
         password
       })
       const userData = response.data.user
+      const token = response.data.token
       
       // Check if user is staff and requires code verification
       if (userData.role === 'staff') {
         setStaffCodeRequired(true)
         setUser(userData)
         localStorage.setItem('user', JSON.stringify(userData))
+        if (token) localStorage.setItem('token', token)
+        else localStorage.removeItem('token')
         return { requiresStaffCode: true, user: userData }
       }
       
       // Admin and students can login directly
       setUser(userData)
       localStorage.setItem('user', JSON.stringify(userData))
+      if (token) localStorage.setItem('token', token)
+      else localStorage.removeItem('token')
       return { user: userData }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed')
@@ -76,6 +81,7 @@ export default function AuthProvider({ children }) {
     setUser(null)
     setStaffCodeRequired(false)
     localStorage.removeItem('user')
+    localStorage.removeItem('token')
   }
 
   const value = useMemo(() => ({

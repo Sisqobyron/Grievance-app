@@ -8,11 +8,12 @@ export default function Messages({ grievanceId, studentId }) {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const token = localStorage.getItem('token');
 
   // Create authorization header
   const config = {
     headers: {
-      'Authorization': `Bearer ${btoa(JSON.stringify(user))}`
+      'Authorization': `Bearer ${token || btoa(JSON.stringify(user))}`
     }
   };
   useEffect(() => {

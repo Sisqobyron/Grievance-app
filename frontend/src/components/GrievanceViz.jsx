@@ -284,9 +284,10 @@ export default function GrievanceViz() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        const token = localStorage.getItem('token');
         const config = {
           headers: {
-            'Authorization': `Bearer ${btoa(JSON.stringify(user))}`
+            'Authorization': `Bearer ${token || btoa(JSON.stringify(user))}`
           }
         };
         

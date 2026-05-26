@@ -1,2 +1,6 @@
 /Diagrams
 /out
+/backend/node_modules/sqlite3/build
+/backend/node_modules/sqlite3/node-addon-api/*.Makefile
+/backend/node_modules/sqlite3/node-addon-api/*.mk
+/frontend/node_modules

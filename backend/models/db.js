@@ -1,7 +1,15 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./sgs.db');
+const path = require('path');
+
+const databasePath = process.env.DATABASE_URL || path.join(__dirname, '../sgs.db');
+const db = new sqlite3.Database(databasePath);
 
 db.serialize(() => {
+  db.run('PRAGMA foreign_keys = ON');
+  db.run('PRAGMA journal_mode = WAL');
+  db.run('PRAGMA synchronous = NORMAL');
+  db.run(`PRAGMA busy_timeout = ${Number(process.env.SQLITE_BUSY_TIMEOUT_MS || 5000)}`);
+
   // Users table (all types)
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -175,6 +183,19 @@ db.serialize(() => {
     FOREIGN KEY(grievance_id) REFERENCES grievances(id),
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_students_department ON students(department)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_grievances_student_id ON grievances(student_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_grievances_status ON grievances(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_grievances_priority_level ON grievances(priority_level)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_grievances_submission_date ON grievances(submission_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_messages_grievance_id ON messages(grievance_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_notifications_user_id_date_sent ON notifications(user_id, date_sent DESC)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_coordinators_department_active ON coordinators(department, is_active)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_grievance_assignments_coordinator_active ON grievance_assignments(coordinator_id, is_active)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_grievance_assignments_grievance_active ON grievance_assignments(grievance_id, is_active)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_grievance_timeline_grievance_id ON grievance_timeline(grievance_id)');
 });
 
 module.exports = db;

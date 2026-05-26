@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
@@ -59,7 +59,7 @@ import api from '../config/axios';
 import { toast } from 'react-toastify';
 
 const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
-  <motion.div
+  <Motion.div
     whileHover={{ scale: 1.02 }}
     transition={{ duration: 0.2 }}
   >
@@ -97,7 +97,7 @@ const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
         </Box>
       </CardContent>
     </Card>
-  </motion.div>
+  </Motion.div>
 );
 
 // Add PropTypes for components
@@ -249,7 +249,7 @@ const CoordinatorWorkspaceDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchAssignedGrievances, fetchUpcomingDeadlines]);  const fetchRecentActivity = useCallback(async (coordinatorData) => {
+  }, [fetchAssignedGrievances, fetchUpcomingDeadlines]);  const fetchRecentActivity = useCallback(async () => {
     try {
       // Use a general timeline endpoint since coordinator-specific one may not exist
       const response = await api.get('/api/timeline/recent');

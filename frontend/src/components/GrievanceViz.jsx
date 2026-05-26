@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { Canvas, useFrame, extend } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { 
   OrbitControls, 
   Text, 
@@ -9,7 +9,6 @@ import {
   MeshDistortMaterial, 
   ContactShadows,
   Html,
-  Effects,
   RoundedBox
 } from '@react-three/drei';
 import * as THREE from 'three';

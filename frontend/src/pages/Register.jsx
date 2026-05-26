@@ -21,7 +21,7 @@ import {
   Chip,
   LinearProgress
 } from '@mui/material'
-import { motion } from 'framer-motion'
+import { motion as Motion } from 'framer-motion'
 import logoImage from '../assets/logo-transparent-png.png'
 
 const validationSchema = Yup.object({
@@ -142,7 +142,7 @@ export default function Register() {
       }}
     >
       <Container maxWidth="sm">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -162,7 +162,7 @@ export default function Register() {
           >
             {/* Logo and Header */}
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <motion.div
+              <Motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
@@ -177,7 +177,7 @@ export default function Register() {
                     filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
                   }}
                 />
-              </motion.div>
+              </Motion.div>
               
               <Typography
                 variant="h4"
@@ -512,7 +512,7 @@ export default function Register() {
               </Box>
             </Box>
           </Paper>
-        </motion.div>
+        </Motion.div>
       </Container>
     </Box>
   )

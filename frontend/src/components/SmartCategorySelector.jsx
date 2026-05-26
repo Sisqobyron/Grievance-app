@@ -5,12 +5,6 @@ import {
   CardContent,
   Typography,
   Chip,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
   Accordion,
   AccordionSummary,
@@ -25,7 +19,7 @@ import {
   AutoAwesome as AIIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
-import { hierarchicalCategories, suggestCategories, getRequiredFields } from '../utils/categoryData';
+import { hierarchicalCategories, suggestCategories } from '../utils/categoryData';
 
 const SmartCategorySelector = ({ 
   description, 
@@ -35,7 +29,6 @@ const SmartCategorySelector = ({
   onSubcategoryChange 
 }) => {
   const [suggestions, setSuggestions] = useState([]);
-  const [showAllCategories, setShowAllCategories] = useState(false);
 
   useEffect(() => {
     if (description && description.length > 10) {

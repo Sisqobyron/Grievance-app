@@ -35,7 +35,7 @@ import {
   ExpandLess,
   Refresh
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -199,7 +199,7 @@ const GrievanceTimeline = ({ grievanceId }) => {
         <Timeline position="alternate">
           <AnimatePresence>
             {timelineData.map((activity, index) => (
-              <motion.div
+              <Motion.div
                 key={activity.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -295,7 +295,7 @@ const GrievanceTimeline = ({ grievanceId }) => {
                     </Card>
                   </TimelineContent>
                 </TimelineItem>
-              </motion.div>
+              </Motion.div>
             ))}
           </AnimatePresence>
         </Timeline>

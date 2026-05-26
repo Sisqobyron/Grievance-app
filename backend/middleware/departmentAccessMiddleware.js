@@ -1,4 +1,5 @@
 const staffModel = require('../models/staffModel');
+const db = require('../models/db');
 
 // Middleware to ensure staff can only access their department's data
 const departmentAccessMiddleware = (req, res, next) => {
@@ -50,13 +51,11 @@ const grievanceDepartmentAccess = (req, res, next) => {
     return next();
   }
   
-  // For staff, check if grievance belongs to their department
-  if (req.user.role === 'staff' && req.staffDepartment) {
-    const db = require('../models/db');
-    
+  const loadGrievanceDepartment = (staffDepartment) => {
     db.get(`
       SELECT 
         g.id,
+        g.student_id,
         s.department
       FROM grievances g
       JOIN students s ON g.student_id = s.user_id
@@ -70,16 +69,46 @@ const grievanceDepartmentAccess = (req, res, next) => {
         return res.status(404).json({ message: 'Grievance not found' });
       }
       
-      if (grievance.department !== req.staffDepartment) {
+      if (req.user.role === 'student') {
+        if (grievance.student_id !== req.user.id) {
+          return res.status(403).json({ message: 'Access denied' });
+        }
+        return next();
+      }
+
+      if (req.user.role === 'staff' && grievance.department !== staffDepartment) {
         return res.status(403).json({ 
           message: 'Access denied. This grievance belongs to a different department.',
-          yourDepartment: req.staffDepartment,
+          yourDepartment: staffDepartment,
           grievanceDepartment: grievance.department
         });
       }
       
       next();
     });
+  };
+
+  if (req.user.role === 'staff') {
+    if (req.staffDepartment) {
+      return loadGrievanceDepartment(req.staffDepartment);
+    }
+
+    return staffModel.getStaffByUserId(req.user.id, (err, staff) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error retrieving staff information', error: err });
+      }
+
+      if (!staff) {
+        return res.status(404).json({ message: 'Staff profile not found. Please contact administrator.' });
+      }
+
+      req.staffDepartment = staff.department;
+      loadGrievanceDepartment(staff.department);
+    });
+  }
+
+  if (req.user.role === 'student') {
+    return loadGrievanceDepartment();
   } else {
     next();
   }

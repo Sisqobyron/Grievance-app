@@ -14,8 +14,11 @@ const api = axios.create({
 // Request interceptor to add auth token if available
 api.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.id) {
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else if (user.id) {
       config.headers.Authorization = `Bearer ${btoa(JSON.stringify(user))}`;
     }
     return config;
@@ -32,6 +35,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
       window.location.href = '/login';
     }
     return Promise.reject(error);

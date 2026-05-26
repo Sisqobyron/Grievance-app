@@ -64,6 +64,38 @@ const coordinatorModel = {
     db.all(sql, [department], callback);
   },
 
+  getBestAvailableCoordinatorByDepartment: (department, callback) => {
+    const sql = `
+      SELECT
+        c.*,
+        u.name,
+        u.email,
+        COUNT(
+          CASE
+            WHEN ga.is_active = 1 AND g.status NOT IN ('Resolved', 'Rejected') THEN ga.grievance_id
+          END
+        ) AS active_cases,
+        (
+          c.max_concurrent_cases - COUNT(
+            CASE
+              WHEN ga.is_active = 1 AND g.status NOT IN ('Resolved', 'Rejected') THEN ga.grievance_id
+            END
+          )
+        ) AS available_capacity
+      FROM coordinators c
+      JOIN users u ON c.user_id = u.id
+      LEFT JOIN grievance_assignments ga ON c.id = ga.coordinator_id
+      LEFT JOIN grievances g ON ga.grievance_id = g.id
+      WHERE c.department = ? AND c.is_active = 1
+      GROUP BY c.id, u.name, u.email
+      HAVING available_capacity > 0
+      ORDER BY active_cases ASC, u.name ASC
+      LIMIT 1
+    `;
+
+    db.get(sql, [department], callback);
+  },
+
   // Get coordinator workload
   getCoordinatorWorkload: (coordinatorId, callback) => {
     const sql = `

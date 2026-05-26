@@ -1,14 +1,52 @@
 const grievanceModel = require('../models/grievanceModel');
 const userModel = require('../models/userModel');
+const studentModel = require('../models/studentModel');
+const staffModel = require('../models/staffModel');
 const timelineModel = require('../models/timelineModel');
 const notifier = require('../utils/notifications');
 const deadlineController = require('./deadlineController');
 const coordinatorModel = require('../models/coordinatorModel');
 
+const buildMonthlyStats = (rows) => {
+  const monthlyStats = {};
+  const currentDate = new Date();
+
+  for (let i = 11; i >= 0; i -= 1) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    monthlyStats[date.toISOString().slice(0, 7)] = 0;
+  }
+
+  rows.forEach((row) => {
+    if (row.month && Object.prototype.hasOwnProperty.call(monthlyStats, row.month)) {
+      monthlyStats[row.month] = row.count;
+    }
+  });
+
+  return monthlyStats;
+};
+
+const mapCountsByKey = (rows, fallbackKeys = []) => {
+  const result = {};
+
+  fallbackKeys.forEach((key) => {
+    result[key] = 0;
+  });
+
+  rows.forEach((row) => {
+    result[row.key] = row.count;
+  });
+
+  return result;
+};
+
 exports.submitGrievance = (req, res) => {
   const { student_id, type, subcategory, description, priority_level } = req.body;
   const file_path = req.file ? req.file.path : null;
   const submission_date = new Date().toISOString();
+
+  if (Number(student_id) !== req.user.id) {
+    return res.status(403).json({ message: 'You can only submit grievances for your own account' });
+  }
 
   // Extract additional dynamic fields (excluding the main fields)
   const excludeFields = ['student_id', 'type', 'subcategory', 'description', 'priority_level'];
@@ -29,7 +67,9 @@ exports.submitGrievance = (req, res) => {
     submission_date,
     priority_level,
     additional_data: JSON.stringify(additionalData)
-  };  grievanceModel.createGrievance(grievance, (err, newGrievance) => {
+  };
+
+  grievanceModel.createGrievance(grievance, (err, newGrievance) => {
     if (err) return res.status(500).json({ message: 'Could not submit grievance', error: err });
     
     console.log('✅ Grievance created successfully with ID:', newGrievance.id);
@@ -77,7 +117,9 @@ exports.submitGrievance = (req, res) => {
       // Send beautiful confirmation email to student
       notifier.sendGrievanceSubmissionEmail(student_id, grievanceData, (emailErr) => {
         if (emailErr) console.error('Error sending confirmation email:', emailErr);
-      });      // Send beautiful notification email to staff
+      });
+
+      // Send beautiful notification email to staff
       notifier.sendStaffNotificationEmail(grievanceData, student.name, (staffEmailErr) => {
         if (staffEmailErr) console.error('Error sending staff notification:', staffEmailErr);
       });
@@ -87,61 +129,35 @@ exports.submitGrievance = (req, res) => {
 
       // Auto-assign to coordinator if department matches
       if (student.department) {
-        coordinatorModel.getCoordinatorsByDepartment(student.department, (coordErr, coordinators) => {
-          if (!coordErr && coordinators.length > 0) {
-            // Auto-assign to coordinator with least workload
-            let processedCoordinators = 0;
-            const coordinatorWorkloads = [];
-            
-            coordinators.forEach((coordinator) => {
-              coordinatorModel.getCoordinatorWorkload(coordinator.id, (workloadErr, workload) => {
-                if (!workloadErr && workload) {
-                  coordinatorWorkloads.push({
-                    ...coordinator,
-                    ...workload
-                  });
-                }
-                
-                processedCoordinators++;
-                
-                if (processedCoordinators === coordinators.length) {
-                  const availableCoordinators = coordinatorWorkloads.filter(c => c.available_capacity > 0);
-                  
-                  if (availableCoordinators.length > 0) {
-                    availableCoordinators.sort((a, b) => a.active_cases - b.active_cases);
-                    const selectedCoordinator = availableCoordinators[0];
-                    
-                    const assignmentData = {
-                      grievance_id: newGrievance.id,
-                      coordinator_id: selectedCoordinator.id,
-                      assigned_by: student_id,
-                      notes: 'Auto-assigned based on department and workload'
-                    };
-                      coordinatorModel.assignGrievance(assignmentData, (assignErr) => {
-                      if (!assignErr) {
-                        console.log(`✅ Auto-assigned grievance #${newGrievance.id} to coordinator ${selectedCoordinator.name}`);
-                        
-                        // Create timeline entry for coordinator assignment
-                        const assignmentTimelineEntry = {
-                          grievance_id: newGrievance.id,
-                          action_type: 'assigned',
-                          action_description: `Assigned to coordinator: ${selectedCoordinator.name}`,
-                          performed_by: student_id,
-                          metadata: {
-                            coordinator_id: selectedCoordinator.id,
-                            coordinator_name: selectedCoordinator.name,
-                            assignment_type: 'auto'
-                          }
-                        };
-                        
-                        timelineModel.addTimelineEntry(assignmentTimelineEntry, (assignTimelineErr) => {
-                          if (assignTimelineErr) console.error('Error creating assignment timeline entry:', assignTimelineErr);
-                        });
-                      }
-                    });
+        coordinatorModel.getBestAvailableCoordinatorByDepartment(student.department, (coordErr, selectedCoordinator) => {
+          if (!coordErr && selectedCoordinator) {
+            const assignmentData = {
+              grievance_id: newGrievance.id,
+              coordinator_id: selectedCoordinator.id,
+              assigned_by: student_id,
+              notes: 'Auto-assigned based on department and workload'
+            };
+
+            coordinatorModel.assignGrievance(assignmentData, (assignErr) => {
+              if (!assignErr) {
+                console.log(`✅ Auto-assigned grievance #${newGrievance.id} to coordinator ${selectedCoordinator.name}`);
+
+                const assignmentTimelineEntry = {
+                  grievance_id: newGrievance.id,
+                  action_type: 'assigned',
+                  action_description: `Assigned to coordinator: ${selectedCoordinator.name}`,
+                  performed_by: student_id,
+                  metadata: {
+                    coordinator_id: selectedCoordinator.id,
+                    coordinator_name: selectedCoordinator.name,
+                    assignment_type: 'auto'
                   }
-                }
-              });
+                };
+
+                timelineModel.addTimelineEntry(assignmentTimelineEntry, (assignTimelineErr) => {
+                  if (assignTimelineErr) console.error('Error creating assignment timeline entry:', assignTimelineErr);
+                });
+              }
             });
           }
         });
@@ -167,22 +183,77 @@ exports.getGrievance = (req, res) => {
 };
 
 exports.getGrievancesByStudent = (req, res) => {
-  const { student_id } = req.params;
+  const studentId = Number(req.params.student_id);
 
-  grievanceModel.getGrievancesByStudent(student_id, (err, grievances) => {
-    if (err) return res.status(500).json({ message: 'Error retrieving grievances', error: err });
-    res.json(grievances);
+  if (Number.isNaN(studentId)) {
+    return res.status(400).json({ message: 'Invalid student id' });
+  }
+
+  const loadGrievances = () => {
+    grievanceModel.getGrievancesByStudent(studentId, (err, grievances) => {
+      if (err) return res.status(500).json({ message: 'Error retrieving grievances', error: err });
+      res.json(grievances);
+    });
+  };
+
+  if (req.user.role === 'admin' || req.user.id === studentId) {
+    return loadGrievances();
+  }
+
+  if (req.user.role !== 'staff') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+
+  const verifyDepartmentAccess = (staffDepartment) => {
+    if (!staffDepartment) {
+      return res.status(403).json({ message: 'Department access is required' });
+    }
+
+    studentModel.getStudentByUserId(studentId, (studentErr, student) => {
+      if (studentErr) {
+        return res.status(500).json({ message: 'Error retrieving student', error: studentErr });
+      }
+
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
+
+      if (student.department !== staffDepartment) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      loadGrievances();
+    });
+  };
+
+  if (req.staffDepartment) {
+    return verifyDepartmentAccess(req.staffDepartment);
+  }
+
+  staffModel.getStaffByUserId(req.user.id, (staffErr, staff) => {
+    if (staffErr) {
+      return res.status(500).json({ message: 'Error retrieving staff', error: staffErr });
+    }
+
+    verifyDepartmentAccess(staff?.department);
   });
 };
 
 exports.updateStatus = (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  const allowedStatuses = ['Submitted', 'Pending', 'In Progress', 'Resolved', 'Rejected'];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ message: 'Invalid status value' });
+  }
 
   // First get the grievance details
   grievanceModel.getGrievanceById(id, (getErr, grievance) => {
     if (getErr) return res.status(500).json({ message: 'Error retrieving grievance', error: getErr });
-    if (!grievance) return res.status(404).json({ message: 'Grievance not found' });    // Update the status
+    if (!grievance) return res.status(404).json({ message: 'Grievance not found' });
+
+    // Update the status
     grievanceModel.updateGrievanceStatus(id, status, (updateErr, updated) => {
       if (updateErr) return res.status(500).json({ message: 'Error updating grievance', error: updateErr });
       
@@ -266,78 +337,46 @@ exports.getGrievancesByDepartment = (req, res) => {
 };
 
 exports.getGrievanceStats = (req, res) => {
-  // Get all grievances to calculate statistics
-  grievanceModel.getAllGrievances((err, grievances) => {
-    if (err) return res.status(500).json({ message: 'Error retrieving grievance statistics', error: err });
-    
-    // Calculate various statistics
-    const total = grievances.length;
-    const resolved = grievances.filter(g => g.status === 'Resolved').length;
-    const pending = grievances.filter(g => g.status === 'Pending' || g.status === 'In Progress').length;
-    const rejected = grievances.filter(g => g.status === 'Rejected').length;
-    
-    // Priority distribution
-    const priorityStats = {
-      Low: grievances.filter(g => g.priority_level === 'Low').length,
-      Medium: grievances.filter(g => g.priority_level === 'Medium').length,
-      High: grievances.filter(g => g.priority_level === 'High').length,
-      Urgent: grievances.filter(g => g.priority_level === 'Urgent').length
-    };
-    
-    // Category distribution
-    const categoryStats = {};
-    grievances.forEach(g => {
-      categoryStats[g.type] = (categoryStats[g.type] || 0) + 1;
-    });
-    
-    // Monthly trends (last 12 months)
-    const monthlyStats = {};
-    const currentDate = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
-      monthlyStats[monthKey] = 0;
+  grievanceModel.getOverviewStats((overviewErr, overview) => {
+    if (overviewErr) {
+      return res.status(500).json({ message: 'Error retrieving grievance statistics', error: overviewErr });
     }
-    
-    grievances.forEach(g => {
-      const monthKey = g.submission_date.slice(0, 7);
-      if (monthlyStats.hasOwnProperty(monthKey)) {
-        monthlyStats[monthKey]++;
+
+    grievanceModel.getCountByField('priority_level', (priorityErr, priorities) => {
+      if (priorityErr) {
+        return res.status(500).json({ message: 'Error retrieving grievance statistics', error: priorityErr });
       }
-    });
-    
-    // Resolution time analysis (for resolved grievances)
-    const resolvedGrievances = grievances.filter(g => g.status === 'Resolved');
-    let avgResolutionTime = 0;
-    if (resolvedGrievances.length > 0) {
-      const totalResolutionTime = resolvedGrievances.reduce((sum, g) => {
-        if (g.resolution_date) {
-          const submissionDate = new Date(g.submission_date);
-          const resolutionDate = new Date(g.resolution_date);
-          const diffDays = Math.ceil((resolutionDate - submissionDate) / (1000 * 60 * 60 * 24));
-          return sum + diffDays;
+
+      grievanceModel.getCountByField('type', (categoryErr, categories) => {
+        if (categoryErr) {
+          return res.status(500).json({ message: 'Error retrieving grievance statistics', error: categoryErr });
         }
-        return sum;
-      }, 0);
-      avgResolutionTime = Math.round(totalResolutionTime / resolvedGrievances.length);
-    }
-    
-    const stats = {
-      overview: {
-        total,
-        resolved,
-        pending,
-        rejected,
-        resolutionRate: total > 0 ? Math.round((resolved / total) * 100) : 0,
-        avgResolutionTime
-      },
-      priorities: priorityStats,
-      categories: categoryStats,
-      monthly: monthlyStats,
-      lastUpdated: new Date().toISOString()
-    };
-    
-    res.json(stats);
+
+        grievanceModel.getMonthlyStats((monthlyErr, monthly) => {
+          if (monthlyErr) {
+            return res.status(500).json({ message: 'Error retrieving grievance statistics', error: monthlyErr });
+          }
+
+          const total = Number(overview.total || 0);
+          const resolved = Number(overview.resolved || 0);
+
+          res.json({
+            overview: {
+              total,
+              resolved,
+              pending: Number(overview.pending || 0),
+              rejected: Number(overview.rejected || 0),
+              resolutionRate: total > 0 ? Math.round((resolved / total) * 100) : 0,
+              avgResolutionTime: 0
+            },
+            priorities: mapCountsByKey(priorities, ['Low', 'Medium', 'High', 'Urgent']),
+            categories: mapCountsByKey(categories),
+            monthly: buildMonthlyStats(monthly),
+            lastUpdated: new Date().toISOString()
+          });
+        });
+      });
+    });
   });
 };
 
